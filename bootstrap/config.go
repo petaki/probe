@@ -1,12 +1,15 @@
 package bootstrap
 
 import (
-	"log"
+	"fmt"
 	"os"
 )
 
-// Config function.
-func Config() {
+// Config bootstrapper.
+type Config struct{}
+
+// Boot function.
+func (Config) Boot() error {
 	requiredKeys := []string{
 		"PROBE_PREFIX",
 		"PROBE_KEEP_DATA",
@@ -16,12 +19,12 @@ func Config() {
 		"PROBE_REDIS_DB",
 	}
 
-	var hasKey bool
-
 	for _, key := range requiredKeys {
-		_, hasKey = os.LookupEnv(key)
+		_, hasKey := os.LookupEnv(key)
 		if !hasKey {
-			log.Fatal(key, " is not defined")
+			return fmt.Errorf("%v is not defined", key)
 		}
 	}
+
+	return nil
 }

@@ -1,15 +1,13 @@
 package bootstrap
 
 import (
-	"log"
-
 	"github.com/joho/godotenv"
 )
 
-// Dotenv function.
-func Dotenv() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal(err)
-	}
+// Dotenv bootstrapper.
+type Dotenv struct{}
+
+// Boot function.
+func (Dotenv) Boot() error {
+	return godotenv.Load()
 }
