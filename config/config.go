@@ -7,11 +7,11 @@ var Current = Config{}
 
 // Config type.
 type Config struct {
-	redisPrefix   string
-	redisHost     string
-	redisPassword string
-	redisPort     int
-	redisDatabase int
+	RedisPrefix   string
+	RedisHost     string
+	RedisPassword string
+	RedisPort     int
+	RedisDatabase int
 }
 
 // GetRequiredKeys function.
@@ -28,25 +28,25 @@ func GetRequiredKeys() []string {
 // Parse function.
 func (c *Config) Parse(key string, value string) error {
 	if key == "PROBE_REDIS_PREFIX" {
-		c.redisPrefix = value
+		c.RedisPrefix = value
 	} else if key == "PROBE_REDIS_HOST" {
-		c.redisHost = value
+		c.RedisHost = value
 	} else if key == "PROBE_REDIS_PASSWORD" {
-		c.redisPassword = value
+		c.RedisPassword = value
 	} else if key == "PROBE_REDIS_PORT" {
 		number, err := strconv.ParseInt(value, 10, 32)
 		if err != nil {
 			return err
 		}
 
-		c.redisPort = int(number)
+		c.RedisPort = int(number)
 	} else if key == "PROBE_REDIS_DATABASE" {
 		number, err := strconv.ParseInt(value, 10, 32)
 		if err != nil {
 			return err
 		}
 
-		c.redisDatabase = int(number)
+		c.RedisDatabase = int(number)
 	}
 
 	return nil

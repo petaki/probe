@@ -8,15 +8,14 @@ type Bootstrapper interface {
 // Boot function.
 func Boot() error {
 	bootstrappers := []Bootstrapper{
+		Print{},
 		Dotenv{},
 		Config{},
-		Print{},
+		Storage{},
 	}
 
-	var err error
-
 	for _, bootstrapper := range bootstrappers {
-		err = bootstrapper.Boot()
+		err := bootstrapper.Boot()
 		if err != nil {
 			return err
 		}

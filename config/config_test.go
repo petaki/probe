@@ -16,11 +16,11 @@ func TestParse(t *testing.T) {
 	config.Parse("PROBE_REDIS_HOST", "127.0.0.1")
 	config.Parse("PROBE_REDIS_PORT", "6379")
 
-	if config.redisHost != "127.0.0.1" {
-		t.Errorf("Expected redis host 127.0.0.1, but got %v", config.redisHost)
+	if config.RedisHost != "127.0.0.1" {
+		t.Errorf("Expected redis host 127.0.0.1, but got %v", config.RedisHost)
 	}
 
-	if config.redisPort != 6379 {
-		t.Errorf("Expected redis port 6379, but got %v", config.redisPort)
+	if config.RedisPort != 6379 {
+		t.Errorf("Expected redis port 6379, but got %v", config.RedisPort)
 	}
 }
