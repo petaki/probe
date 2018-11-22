@@ -13,10 +13,8 @@ func Boot() error {
 		Print{},
 	}
 
-	var err error
-
 	for _, bootstrapper := range bootstrappers {
-		err = bootstrapper.Boot()
+		err := bootstrapper.Boot()
 		if err != nil {
 			return err
 		}
