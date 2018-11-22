@@ -8,9 +8,10 @@ type Bootstrapper interface {
 // Boot function.
 func Boot() error {
 	bootstrappers := []Bootstrapper{
+		Print{},
 		Dotenv{},
 		Config{},
-		Print{},
+		Storage{},
 	}
 
 	for _, bootstrapper := range bootstrappers {
