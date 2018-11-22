@@ -3,6 +3,8 @@ package bootstrap
 import (
 	"fmt"
 	"os"
+
+	"github.com/petaki/probe/config"
 )
 
 // Config bootstrapper.
@@ -10,19 +12,17 @@ type Config struct{}
 
 // Boot function.
 func (Config) Boot() error {
-	requiredKeys := []string{
-		"PROBE_PREFIX",
-		"PROBE_KEEP_DATA",
-		"PROBE_REDIS_HOST",
-		"PROBE_REDIS_PASSWORD",
-		"PROBE_REDIS_PORT",
-		"PROBE_REDIS_DB",
-	}
+	requiredKeys := config.GetRequiredKeys()
 
 	for _, key := range requiredKeys {
-		_, hasKey := os.LookupEnv(key)
+		value, hasKey := os.LookupEnv(key)
 		if !hasKey {
 			return fmt.Errorf("%v is not defined", key)
+		}
+
+		err := config.Current.Parse(key, value)
+		if err != nil {
+			return err
 		}
 	}
 
