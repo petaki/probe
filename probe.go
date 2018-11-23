@@ -1,20 +1,35 @@
 package main // import "github.com/petaki/probe"
 
 import (
+	"fmt"
 	"log"
 
-	"github.com/petaki/probe/bootstrap"
-	"github.com/petaki/probe/watchers"
+	"github.com/joho/godotenv"
+	"github.com/petaki/probe/config"
+	"github.com/petaki/probe/storage"
 )
 
-func main() {
-	err := bootstrap.Boot()
+var (
+	mainConfig  = config.Config{}
+	mainStorage = storage.Storage{}
+)
+
+func init() {
+	fmt.Println("Starting Probe...")
+
+	err := godotenv.Load()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = watchers.Watch()
+	mainConfig, err = config.Load()
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	mainStorage = storage.New(mainConfig)
+}
+
+func main() {
+	fmt.Println("Probe is watching.")
 }

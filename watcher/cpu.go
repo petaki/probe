@@ -1,9 +1,9 @@
-package watchers
+package watcher
 
 import (
-	"fmt"
 	"time"
 
+	"github.com/petaki/probe/model"
 	"github.com/shirou/gopsutil/cpu"
 )
 
@@ -11,13 +11,13 @@ import (
 type CPU struct{}
 
 // Watch function.
-func (CPU) Watch() error {
+func (CPU) Watch() (model.CPU, error) {
 	cpuPercent, err := cpu.Percent(3*time.Second, false)
 	if err != nil {
-		return err
+		return model.CPU{}, err
 	}
 
-	fmt.Println(cpuPercent[0])
-
-	return nil
+	return model.CPU{
+		Usage: cpuPercent[0],
+	}, nil
 }
