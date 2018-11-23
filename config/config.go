@@ -1,9 +1,10 @@
 package config
 
-import "strconv"
-
-// Current instance.
-var Current = Config{}
+import (
+	"fmt"
+	"os"
+	"strconv"
+)
 
 // Config type.
 type Config struct {
@@ -14,33 +15,57 @@ type Config struct {
 	RedisDatabase int
 }
 
-// GetRequiredKeys function.
-func GetRequiredKeys() []string {
-	return []string{
-		"PROBE_REDIS_PREFIX",
-		"PROBE_REDIS_HOST",
-		"PROBE_REDIS_PASSWORD",
-		"PROBE_REDIS_PORT",
-		"PROBE_REDIS_DATABASE",
-	}
+const (
+	envRedisPrefix   = "PROBE_REDIS_PREFIX"
+	envRedisHost     = "PROBE_REDIS_HOST"
+	envRedisPassword = "PROBE_REDIS_PASSWORD"
+	envRedisPort     = "PROBE_REDIS_PORT"
+	envRedisDatabase = "PROBE_REDIS_DATABASE"
+)
+
+var envKeys = []string{
+	envRedisPrefix,
+	envRedisHost,
+	envRedisPassword,
+	envRedisPort,
+	envRedisDatabase,
 }
 
-// Parse function.
-func (c *Config) Parse(key string, value string) error {
-	if key == "PROBE_REDIS_PREFIX" {
+// Load function.
+func Load() (Config, error) {
+	config := Config{}
+
+	for _, key := range envKeys {
+		value, hasKey := os.LookupEnv(key)
+		if !hasKey {
+			return Config{}, fmt.Errorf("%v is not defined", key)
+		}
+
+		err := config.parse(key, value)
+		if err != nil {
+			return Config{}, err
+		}
+	}
+
+	return config, nil
+}
+
+func (c *Config) parse(key string, value string) error {
+	switch key {
+	case envRedisPrefix:
 		c.RedisPrefix = value
-	} else if key == "PROBE_REDIS_HOST" {
+	case envRedisHost:
 		c.RedisHost = value
-	} else if key == "PROBE_REDIS_PASSWORD" {
+	case envRedisPassword:
 		c.RedisPassword = value
-	} else if key == "PROBE_REDIS_PORT" {
+	case envRedisPort:
 		number, err := strconv.ParseInt(value, 10, 32)
 		if err != nil {
 			return err
 		}
 
 		c.RedisPort = int(number)
-	} else if key == "PROBE_REDIS_DATABASE" {
+	case envRedisDatabase:
 		number, err := strconv.ParseInt(value, 10, 32)
 		if err != nil {
 			return err

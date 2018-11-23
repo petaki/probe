@@ -1,8 +1,7 @@
-package watchers
+package watcher
 
 import (
-	"fmt"
-
+	"github.com/petaki/probe/model"
 	"github.com/shirou/gopsutil/disk"
 )
 
@@ -10,24 +9,22 @@ import (
 type Disk struct{}
 
 // Watch function.
-func (Disk) Watch() error {
+func (Disk) Watch() (model.Disk, error) {
 	partitions, err := disk.Partitions(false)
 	if err != nil {
-		return err
+		return model.Disk{}, err
 	}
 
-	usage := map[string]float64{}
+	diskModel := model.Disk{}
 
 	for _, parititon := range partitions {
 		diskUsage, err := disk.Usage(parititon.Mountpoint)
 		if err != nil {
-			return err
+			return model.Disk{}, err
 		}
 
-		usage[parititon.Mountpoint] = diskUsage.UsedPercent
+		diskModel.Usage[parititon.Mountpoint] = diskUsage.UsedPercent
 	}
 
-	fmt.Println(usage)
-
-	return nil
+	return diskModel, nil
 }

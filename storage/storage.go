@@ -7,29 +7,28 @@ import (
 	"github.com/petaki/probe/config"
 )
 
-// Current instance.
-var Current = Storage{}
-
 // Storage type.
 type Storage struct {
 	Pool *redis.Pool
 }
 
-// Setup function.
-func (s *Storage) Setup() {
-	s.Pool = &redis.Pool{
+// New function.
+func New(config config.Config) Storage {
+	storage := Storage{}
+
+	storage.Pool = &redis.Pool{
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
 		Dial: func() (redis.Conn, error) {
 			options := []redis.DialOption{
-				redis.DialDatabase(config.Current.RedisDatabase),
+				redis.DialDatabase(config.RedisDatabase),
 			}
 
-			if config.Current.RedisPassword != "" {
-				options = append(options, redis.DialPassword(config.Current.RedisPassword))
+			if config.RedisPassword != "" {
+				options = append(options, redis.DialPassword(config.RedisPassword))
 			}
 
-			return redis.Dial("tcp", config.Current.RedisHost, options...)
+			return redis.Dial("tcp", config.RedisHost, options...)
 		},
 		TestOnBorrow: func(c redis.Conn, t time.Time) error {
 			if time.Since(t) < time.Minute {
@@ -41,4 +40,6 @@ func (s *Storage) Setup() {
 			return err
 		},
 	}
+
+	return storage
 }
