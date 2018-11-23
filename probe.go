@@ -7,6 +7,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/petaki/probe/config"
 	"github.com/petaki/probe/storage"
+	"github.com/petaki/probe/watcher"
 )
 
 var (
@@ -27,9 +28,11 @@ func init() {
 		log.Fatal(err)
 	}
 
-	mainStorage = storage.New(mainConfig)
+	mainStorage = storage.New(&mainConfig)
 }
 
 func main() {
+	watcher.Watch(&mainStorage)
+
 	fmt.Println("Probe is watching.")
 }

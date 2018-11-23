@@ -11,7 +11,7 @@ type Config struct {
 	RedisPrefix   string
 	RedisHost     string
 	RedisPassword string
-	RedisPort     int
+	RedisPort     string
 	RedisDatabase int
 }
 
@@ -59,12 +59,7 @@ func (c *Config) parse(key string, value string) error {
 	case envRedisPassword:
 		c.RedisPassword = value
 	case envRedisPort:
-		number, err := strconv.ParseInt(value, 10, 32)
-		if err != nil {
-			return err
-		}
-
-		c.RedisPort = int(number)
+		c.RedisPort = value
 	case envRedisDatabase:
 		number, err := strconv.ParseInt(value, 10, 32)
 		if err != nil {
