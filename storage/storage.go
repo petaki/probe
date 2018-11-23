@@ -63,13 +63,16 @@ func (s *Storage) Save(m interface{}) error {
 		return err
 	}
 
+	now := time.Now()
+	field := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), 0, 0, now.Location()).String()
+
 	switch value := m.(type) {
 	case model.CPU:
-		_, err = s.rpush(key, value.Used)
+		_, err = s.hset(key, field, value.Used)
 	case model.Disk:
-		_, err = s.rpush(key, value.Used)
+		_, err = s.hset(key, field, value.Used)
 	case model.Memory:
-		_, err = s.rpush(key, value.Used)
+		_, err = s.hset(key, field, value.Used)
 	}
 
 	if err != nil {
@@ -77,11 +80,10 @@ func (s *Storage) Save(m interface{}) error {
 	}
 
 	if !exists {
-		end := time.Now()
-		start := time.Date(end.Year(), end.Month(), end.Day(), 0, 0, 0, 0, end.Location())
-		timeout := 7*24*time.Hour - end.Sub(start)
+		start := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+		timeout := int(7*24*time.Hour - now.Sub(start))
 
-		_, err := s.expire(key, int(timeout))
+		_, err := s.expire(key, timeout)
 		if err != nil {
 			return err
 		}
@@ -114,11 +116,11 @@ func (s *Storage) exists(key string) (bool, error) {
 	return redis.Bool(conn.Do("EXISTS", key))
 }
 
-func (s *Storage) rpush(key string, value interface{}) (int, error) {
+func (s *Storage) hset(key string, field string, value interface{}) (bool, error) {
 	conn := s.Pool.Get()
 	defer conn.Close()
 
-	return redis.Int(conn.Do("RPUSH", key, value))
+	return redis.Bool(conn.Do("HSET", key, field, value))
 }
 
 func (s *Storage) expire(key string, timeout int) (bool, error) {
