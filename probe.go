@@ -32,7 +32,7 @@ func init() {
 }
 
 func main() {
-	watcher.Watch(&mainStorage)
-
 	fmt.Println("Probe is watching.")
+
+	watcher.Watch(&mainStorage)
 }
