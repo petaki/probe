@@ -30,7 +30,7 @@ func TestLoadAndParse(t *testing.T) {
 		t.Errorf("Expected redis password secret, but got %v", config.RedisPassword)
 	}
 
-	if config.RedisPort != 6379 {
+	if config.RedisPort != "6379" {
 		t.Errorf("Expected redis port 6379, but got %v", config.RedisPort)
 	}
 
