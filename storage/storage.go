@@ -63,8 +63,7 @@ func (s *Storage) Save(m interface{}) error {
 		return err
 	}
 
-	now := time.Now()
-	field := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), 0, 0, now.Location()).String()
+	field := s.field()
 
 	switch value := m.(type) {
 	case model.CPU:
@@ -80,16 +79,45 @@ func (s *Storage) Save(m interface{}) error {
 	}
 
 	if !exists {
-		start := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-		timeout := int(7*24*time.Hour - now.Sub(start))
-
-		_, err := s.expire(key, timeout)
+		_, err := s.expire(key, s.timeout())
 		if err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+func (s *Storage) field() string {
+	now := time.Now()
+	date := time.Date(
+		now.Year(),
+		now.Month(),
+		now.Day(),
+		now.Hour(),
+		now.Minute(),
+		0,
+		0,
+		now.Location(),
+	)
+
+	return date.String()
+}
+
+func (s *Storage) timeout() int {
+	now := time.Now()
+	date := time.Date(
+		now.Year(),
+		now.Month(),
+		now.Day(),
+		0,
+		0,
+		0,
+		0,
+		now.Location(),
+	)
+
+	return int(7*24*time.Hour - now.Sub(date))
 }
 
 func (s *Storage) key(m interface{}) (string, error) {
