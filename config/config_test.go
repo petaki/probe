@@ -17,14 +17,6 @@ func TestLoadAndParse(t *testing.T) {
 		t.Errorf("Cannot load the environment variables.")
 	}
 
-	if config.RedisPrefix != "probe:" {
-		t.Errorf("Expected redis prefix probe:, but got %v", config.RedisPrefix)
-	}
-
-	if config.RedisTimeout != 604800 {
-		t.Errorf("Expected redis timeout 604800, but got %v", config.RedisTimeout)
-	}
-
 	if config.RedisHost != "127.0.0.1" {
 		t.Errorf("Expected redis host 127.0.0.1, but got %v", config.RedisHost)
 	}
@@ -39,5 +31,13 @@ func TestLoadAndParse(t *testing.T) {
 
 	if config.RedisDatabase != 0 {
 		t.Errorf("Expected redis database 0, but got %v", config.RedisDatabase)
+	}
+
+	if config.RedisKeyPrefix != "probe:" {
+		t.Errorf("Expected redis prefix probe:, but got %v", config.RedisKeyPrefix)
+	}
+
+	if config.RedisKeyTimeout != 604800 {
+		t.Errorf("Expected redis timeout 604800, but got %v", config.RedisKeyTimeout)
 	}
 }

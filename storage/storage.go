@@ -15,44 +15,39 @@ import (
 
 // Storage type.
 type Storage struct {
-	Prefix  string
-	Timeout int
-	Pool    *redis.Pool
+	Config *config.Config
+	Pool   *redis.Pool
 }
 
 // New function.
 func New(config *config.Config) Storage {
-	storage := Storage{}
+	return Storage{
+		Config: config,
+		Pool: &redis.Pool{
+			MaxIdle:     3,
+			IdleTimeout: 240 * time.Second,
+			Dial: func() (redis.Conn, error) {
+				options := []redis.DialOption{
+					redis.DialDatabase(config.RedisDatabase),
+				}
 
-	storage.Prefix = config.RedisPrefix
-	storage.Timeout = config.RedisTimeout
+				if config.RedisPassword != "" {
+					options = append(options, redis.DialPassword(config.RedisPassword))
+				}
 
-	storage.Pool = &redis.Pool{
-		MaxIdle:     3,
-		IdleTimeout: 240 * time.Second,
-		Dial: func() (redis.Conn, error) {
-			options := []redis.DialOption{
-				redis.DialDatabase(config.RedisDatabase),
-			}
+				return redis.Dial("tcp", net.JoinHostPort(config.RedisHost, config.RedisPort), options...)
+			},
+			TestOnBorrow: func(c redis.Conn, t time.Time) error {
+				if time.Since(t) < time.Minute {
+					return nil
+				}
 
-			if config.RedisPassword != "" {
-				options = append(options, redis.DialPassword(config.RedisPassword))
-			}
+				_, err := c.Do("PING")
 
-			return redis.Dial("tcp", net.JoinHostPort(config.RedisHost, config.RedisPort), options...)
-		},
-		TestOnBorrow: func(c redis.Conn, t time.Time) error {
-			if time.Since(t) < time.Minute {
-				return nil
-			}
-
-			_, err := c.Do("PING")
-
-			return err
+				return err
+			},
 		},
 	}
-
-	return storage
 }
 
 // Save function.
@@ -81,7 +76,7 @@ func (s *Storage) Save(m interface{}) error {
 	}
 
 	if !exists {
-		_, err := s.expire(key, s.Timeout)
+		_, err := s.expire(key, s.Config.RedisKeyTimeout)
 		if err != nil {
 			return err
 		}
@@ -93,13 +88,13 @@ func (s *Storage) Save(m interface{}) error {
 func (s *Storage) key(m interface{}) (string, error) {
 	switch value := m.(type) {
 	case model.CPU:
-		return fmt.Sprintf("%scpu:%s", s.Prefix, s.timestamp()), nil
+		return fmt.Sprintf("%scpu:%s", s.Config.RedisKeyPrefix, s.timestamp()), nil
 	case model.Memory:
-		return fmt.Sprintf("%smemory:%s", s.Prefix, s.timestamp()), nil
+		return fmt.Sprintf("%smemory:%s", s.Config.RedisKeyPrefix, s.timestamp()), nil
 	case model.Disk:
 		encodedPath := base64.StdEncoding.EncodeToString([]byte(value.Path))
 
-		return fmt.Sprintf("%sdisk:%s:%s", s.Prefix, s.timestamp(), encodedPath), nil
+		return fmt.Sprintf("%sdisk:%s:%s", s.Config.RedisKeyPrefix, s.timestamp(), encodedPath), nil
 	default:
 		return "", errors.New("Unknown model type")
 	}
