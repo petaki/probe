@@ -7,17 +7,10 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	storage := New(&config.Config{
-		RedisPrefix:  "probe:",
-		RedisTimeout: 10080,
-	})
+	storage := New(&config.Config{})
 
-	if storage.Prefix != "probe:" {
-		t.Errorf("Expected prefix probe:, but got %v", storage.Prefix)
-	}
-
-	if storage.Timeout != 10080 {
-		t.Errorf("Expected timeout 10080, but got %v", storage.Timeout)
+	if storage.Config == nil {
+		t.Errorf("The config is a nil pointer")
 	}
 
 	if storage.Pool == nil {
