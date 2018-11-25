@@ -9,6 +9,7 @@ import (
 // Config type.
 type Config struct {
 	RedisPrefix   string
+	RedisTimeout  int
 	RedisHost     string
 	RedisPassword string
 	RedisPort     string
@@ -17,6 +18,7 @@ type Config struct {
 
 const (
 	envRedisPrefix   = "PROBE_REDIS_PREFIX"
+	envRedisTimeout  = "PROBE_REDIS_TIMEOUT"
 	envRedisHost     = "PROBE_REDIS_HOST"
 	envRedisPassword = "PROBE_REDIS_PASSWORD"
 	envRedisPort     = "PROBE_REDIS_PORT"
@@ -25,6 +27,7 @@ const (
 
 var envKeys = []string{
 	envRedisPrefix,
+	envRedisTimeout,
 	envRedisHost,
 	envRedisPassword,
 	envRedisPort,
@@ -54,6 +57,13 @@ func (c *Config) parse(key string, value string) error {
 	switch key {
 	case envRedisPrefix:
 		c.RedisPrefix = value
+	case envRedisTimeout:
+		number, err := strconv.ParseInt(value, 10, 32)
+		if err != nil {
+			return err
+		}
+
+		c.RedisTimeout = int(number)
 	case envRedisHost:
 		c.RedisHost = value
 	case envRedisPassword:
