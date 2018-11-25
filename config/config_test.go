@@ -21,6 +21,10 @@ func TestLoadAndParse(t *testing.T) {
 		t.Errorf("Expected redis prefix probe:, but got %v", config.RedisPrefix)
 	}
 
+	if config.RedisTimeout != 604800 {
+		t.Errorf("Expected redis timeout 604800, but got %v", config.RedisTimeout)
+	}
+
 	if config.RedisHost != "127.0.0.1" {
 		t.Errorf("Expected redis host 127.0.0.1, but got %v", config.RedisHost)
 	}

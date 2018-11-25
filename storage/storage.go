@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strconv"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
@@ -14,8 +15,9 @@ import (
 
 // Storage type.
 type Storage struct {
-	Prefix string
-	Pool   *redis.Pool
+	Prefix  string
+	Timeout int
+	Pool    *redis.Pool
 }
 
 // New function.
@@ -23,6 +25,8 @@ func New(config *config.Config) Storage {
 	storage := Storage{}
 
 	storage.Prefix = config.RedisPrefix
+	storage.Timeout = config.RedisTimeout
+
 	storage.Pool = &redis.Pool{
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
@@ -63,15 +67,13 @@ func (s *Storage) Save(m interface{}) error {
 		return err
 	}
 
-	field := s.field()
-
 	switch value := m.(type) {
 	case model.CPU:
-		_, err = s.hset(key, field, value.Used)
+		_, err = s.hset(key, s.field(), value.Used)
 	case model.Disk:
-		_, err = s.hset(key, field, value.Used)
+		_, err = s.hset(key, s.field(), value.Used)
 	case model.Memory:
-		_, err = s.hset(key, field, value.Used)
+		_, err = s.hset(key, s.field(), value.Used)
 	}
 
 	if err != nil {
@@ -79,13 +81,44 @@ func (s *Storage) Save(m interface{}) error {
 	}
 
 	if !exists {
-		_, err := s.expire(key, s.timeout())
+		_, err := s.expire(key, s.Timeout)
 		if err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+func (s *Storage) key(m interface{}) (string, error) {
+	switch value := m.(type) {
+	case model.CPU:
+		return fmt.Sprintf("%scpu:%s", s.Prefix, s.timestamp()), nil
+	case model.Memory:
+		return fmt.Sprintf("%smemory:%s", s.Prefix, s.timestamp()), nil
+	case model.Disk:
+		encodedPath := base64.StdEncoding.EncodeToString([]byte(value.Path))
+
+		return fmt.Sprintf("%sdisk:%s:%s", s.Prefix, s.timestamp(), encodedPath), nil
+	default:
+		return "", errors.New("Unknown model type")
+	}
+}
+
+func (s *Storage) timestamp() string {
+	now := time.Now()
+	date := time.Date(
+		now.Year(),
+		now.Month(),
+		now.Day(),
+		0,
+		0,
+		0,
+		0,
+		now.Location(),
+	)
+
+	return strconv.FormatInt(date.Unix(), 10)
 }
 
 func (s *Storage) field() string {
@@ -101,40 +134,7 @@ func (s *Storage) field() string {
 		now.Location(),
 	)
 
-	return date.String()
-}
-
-func (s *Storage) timeout() int {
-	now := time.Now()
-	date := time.Date(
-		now.Year(),
-		now.Month(),
-		now.Day(),
-		0,
-		0,
-		0,
-		0,
-		now.Location(),
-	)
-
-	return int(7*24*time.Hour - now.Sub(date))
-}
-
-func (s *Storage) key(m interface{}) (string, error) {
-	weekday := int(time.Now().Weekday())
-
-	switch value := m.(type) {
-	case model.CPU:
-		return fmt.Sprintf("%scpu:%v", s.Prefix, weekday), nil
-	case model.Memory:
-		return fmt.Sprintf("%smemory:%v", s.Prefix, weekday), nil
-	case model.Disk:
-		encodedPath := base64.StdEncoding.EncodeToString([]byte(value.Path))
-
-		return fmt.Sprintf("%sdisk:%v:%s", s.Prefix, weekday, encodedPath), nil
-	}
-
-	return "", errors.New("Unknown model type")
+	return strconv.FormatInt(date.Unix(), 10)
 }
 
 func (s *Storage) exists(key string) (bool, error) {
