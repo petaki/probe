@@ -18,7 +18,7 @@ Before you start, you need to install the prerequisites.
 
 Currently, you can only install from source.
 
-#### 1. Clone the repository and open the folder:
+#### 1. Clone the repository:
 
 ```
 git clone git@github.com:petaki/probe.git
