@@ -37,7 +37,7 @@ func TestLoadAndParse(t *testing.T) {
 		t.Errorf("Expected redis prefix probe:, but got %v", config.RedisKeyPrefix)
 	}
 
-	if config.RedisKeyTimeout != 604800 {
-		t.Errorf("Expected redis timeout 604800, but got %v", config.RedisKeyTimeout)
+	if config.RedisKeyTimeout != 2592000 {
+		t.Errorf("Expected redis timeout 2592000, but got %v", config.RedisKeyTimeout)
 	}
 }
