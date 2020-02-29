@@ -1,10 +1,10 @@
 module github.com/petaki/probe
 
-go 1.13
+go 1.14
 
 require (
 	github.com/gomodule/redigo v2.0.0+incompatible
-	github.com/joho/godotenv v1.3.0 // indirect
-	github.com/shirou/gopsutil v2.18.12+incompatible
-	golang.org/x/sys v0.0.0-20190919044723-0c1ff786ef13 // indirect
+	github.com/joho/godotenv v1.3.0
+	github.com/shirou/gopsutil v2.20.1+incompatible
+	golang.org/x/sys v0.0.0-20200223170610-d5e6a3e2c0ae // indirect
 )
