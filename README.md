@@ -1,7 +1,7 @@
 # Probe
 
 [![Build Status](https://github.com/petaki/probe/workflows/tests/badge.svg)](https://github.com/petaki/probe/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](LICENSE.md)
 
 A small GO based agent for monitoring CPU, Memory and Disk usage.
 
@@ -76,6 +76,11 @@ go test -v ./...
 
 You can display the collected data with the [Satellite](https://github.com/petaki/satellite).
 
+## Reporting Issues
+
+If you are facing a problem with this package or found any bug, please open an issue on [GitHub](https://github.com/petaki/probe/issues).
+
+
 ## License
 
-The Probe is open-sourced software licensed under the [MIT license](http://opensource.org/licenses/MIT).
+The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
