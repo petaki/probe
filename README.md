@@ -74,7 +74,7 @@ go test -v ./...
 
 ## Data visualization
 
-You can display the collected data with the [Carrier](https://github.com/petaki/carrier).
+You can display the collected data with the [Satellite](https://github.com/petaki/satellite).
 
 ## License
 
