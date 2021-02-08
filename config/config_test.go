@@ -17,20 +17,8 @@ func TestLoadAndParse(t *testing.T) {
 		t.Errorf("Cannot load the environment variables.")
 	}
 
-	if config.RedisHost != "127.0.0.1" {
-		t.Errorf("Expected redis host 127.0.0.1, but got %v", config.RedisHost)
-	}
-
-	if config.RedisPassword != "" {
-		t.Errorf("Expected redis password empty, but got %v", config.RedisPassword)
-	}
-
-	if config.RedisPort != "6379" {
-		t.Errorf("Expected redis port 6379, but got %v", config.RedisPort)
-	}
-
-	if config.RedisDatabase != 0 {
-		t.Errorf("Expected redis database 0, but got %v", config.RedisDatabase)
+	if config.RedisUrl != "redis://127.0.0.1:6379/0" {
+		t.Errorf("Expected redis host redis://127.0.0.1:6379/0, but got %v", config.RedisUrl)
 	}
 
 	if config.RedisKeyPrefix != "probe:" {

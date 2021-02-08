@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"net"
 	"strconv"
 	"time"
 
@@ -27,24 +26,7 @@ func New(config *config.Config) Storage {
 			MaxIdle:     3,
 			IdleTimeout: 240 * time.Second,
 			Dial: func() (redis.Conn, error) {
-				options := []redis.DialOption{
-					redis.DialDatabase(config.RedisDatabase),
-				}
-
-				if config.RedisPassword != "" {
-					options = append(options, redis.DialPassword(config.RedisPassword))
-				}
-
-				return redis.Dial("tcp", net.JoinHostPort(config.RedisHost, config.RedisPort), options...)
-			},
-			TestOnBorrow: func(c redis.Conn, t time.Time) error {
-				if time.Since(t) < time.Minute {
-					return nil
-				}
-
-				_, err := c.Do("PING")
-
-				return err
+				return redis.DialURL(config.RedisUrl)
 			},
 		},
 	}

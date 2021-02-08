@@ -49,10 +49,7 @@ The configruation is stored in the `.env` file.
 #### Redis connection:
 
 ```
-PROBE_REDIS_HOST=127.0.0.1
-PROBE_REDIS_PASSWORD=
-PROBE_REDIS_PORT=6379
-PROBE_REDIS_DATABASE=0
+PROBE_REDIS_URL=redis://127.0.0.1:6379/0
 ```
 
 #### Redis key prefix:
