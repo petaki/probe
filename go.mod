@@ -8,5 +8,5 @@ require (
 	github.com/gomodule/redigo v1.8.3
 	github.com/joho/godotenv v1.3.0
 	github.com/shirou/gopsutil v3.21.1+incompatible
-	golang.org/x/sys v0.0.0-20210216163648-f7da38b97c65 // indirect
+	golang.org/x/sys v0.0.0-20210216224549-f992740a1bac // indirect
 )
