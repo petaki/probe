@@ -1,0 +1,38 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.15
+
+      - name: Set version
+        id: vars
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+
+      - name: Build
+        run: make
+        env:
+          RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
+
+      - name: Upload release
+        run: |
+          set -x
+          assets=()
+          for asset in ./dist/*.zip; do
+            assets+=("-a" "$asset")
+          done
+          hub release create -d "${assets[@]}" -m "$RELEASE_VERSION" "$RELEASE_VERSION"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
