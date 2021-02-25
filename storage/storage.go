@@ -26,7 +26,7 @@ func New(config *config.Config) Storage {
 			MaxIdle:     3,
 			IdleTimeout: 240 * time.Second,
 			Dial: func() (redis.Conn, error) {
-				return redis.DialURL(config.RedisUrl)
+				return redis.DialURL(config.RedisURL)
 			},
 		},
 	}

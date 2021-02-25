@@ -8,19 +8,19 @@ import (
 
 // Config type.
 type Config struct {
-	RedisUrl        string
+	RedisURL        string
 	RedisKeyPrefix  string
 	RedisKeyTimeout int
 }
 
 const (
-	envRedisUrl        = "PROBE_REDIS_URL"
+	envRedisURL        = "PROBE_REDIS_URL"
 	envRedisKeyPrefix  = "PROBE_REDIS_KEY_PREFIX"
 	envRedisKeyTimeout = "PROBE_REDIS_KEY_TIMEOUT"
 )
 
 var envKeys = []string{
-	envRedisUrl,
+	envRedisURL,
 	envRedisKeyPrefix,
 	envRedisKeyTimeout,
 }
@@ -46,8 +46,8 @@ func Load() (Config, error) {
 
 func (c *Config) parse(key string, value string) error {
 	switch key {
-	case envRedisUrl:
-		c.RedisUrl = value
+	case envRedisURL:
+		c.RedisURL = value
 	case envRedisKeyPrefix:
 		c.RedisKeyPrefix = value
 	case envRedisKeyTimeout:
