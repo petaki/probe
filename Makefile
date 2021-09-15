@@ -1,11 +1,9 @@
 VERSION := $(if $(RELEASE_VERSION),$(RELEASE_VERSION),"master")
 
-all: pre_clean dotenv darwin linux windows post_clean
+all: pre_clean darwin linux windows post_clean
 
 pre_clean:
 	rm -rf dist
-
-dotenv:
 	mkdir dist
 	cp .env.example dist/.env
 
