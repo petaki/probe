@@ -12,7 +12,7 @@ Before you start, you need to install the prerequisites.
 ### Prerequisites
 
 - Redis: `Version >= 5.0` for data logging
-- GO: `Version >= 1.15` for building
+- GO: `Version >= 1.17` for building
 
 ### Install from binary
 
