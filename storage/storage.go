@@ -78,7 +78,7 @@ func (s *Storage) key(m interface{}) (string, error) {
 
 		return fmt.Sprintf("%sdisk:%s:%s", s.Config.RedisKeyPrefix, s.timestamp(), encodedPath), nil
 	default:
-		return "", errors.New("Unknown model type")
+		return "", errors.New("unknown model type")
 	}
 }
 
