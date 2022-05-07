@@ -1,6 +1,6 @@
 module github.com/petaki/probe
 
-go 1.17
+go 1.18
 
 require (
 	github.com/gomodule/redigo v1.8.8
@@ -13,5 +13,5 @@ require (
 	github.com/tklauser/go-sysconf v0.3.10 // indirect
 	github.com/tklauser/numcpus v0.4.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
-	golang.org/x/sys v0.0.0-20220405210540-1e041c57c461 // indirect
+	golang.org/x/sys v0.0.0-20220503163025-988cb79eb6c6 // indirect
 )
