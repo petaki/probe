@@ -5,7 +5,7 @@ import (
 
 	"github.com/petaki/probe/model"
 	"github.com/petaki/probe/storage"
-	"github.com/shirou/gopsutil/disk"
+	"github.com/shirou/gopsutil/v3/disk"
 )
 
 // Disk watcher.
@@ -20,14 +20,14 @@ func (Disk) Watch(s *storage.Storage, index int, channel chan int) {
 
 	diskModels := []model.Disk{}
 
-	for _, parititon := range partitions {
-		diskUsage, err := disk.Usage(parititon.Mountpoint)
+	for _, partition := range partitions {
+		diskUsage, err := disk.Usage(partition.Mountpoint)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		diskModels = append(diskModels, model.Disk{
-			Path: parititon.Mountpoint,
+			Path: partition.Mountpoint,
 			Used: diskUsage.UsedPercent,
 		})
 	}
