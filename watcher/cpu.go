@@ -6,7 +6,7 @@ import (
 
 	"github.com/petaki/probe/model"
 	"github.com/petaki/probe/storage"
-	"github.com/shirou/gopsutil/cpu"
+	"github.com/shirou/gopsutil/v3/cpu"
 )
 
 // CPU watcher.
