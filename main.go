@@ -27,7 +27,7 @@ func init() {
 	mainStorage = storage.New(mainConfig)
 
 	if mainConfig.AlarmEnabled {
-		fmt.Println("  🚨 Alarm armed.")
+		fmt.Println("  🚨 Alarm is armed.")
 		fmt.Println()
 	}
 }
