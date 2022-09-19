@@ -19,7 +19,7 @@ const (
 	envAlarmWebhookMethod = "PROBE_ALARM_WEBHOOK_METHOD"
 	envAlarmWebhookURL    = "PROBE_ALARM_WEBHOOK_URL"
 	envAlarmWebhookHeader = "PROBE_ALARM_WEBHOOK_HEADER"
-	envAlarmWebhookData   = "PROBE_ALARM_WEBHOOK_DATA"
+	envAlarmWebhookBody   = "PROBE_ALARM_WEBHOOK_BODY"
 )
 
 var envKeys = []string{
@@ -34,7 +34,7 @@ var envKeys = []string{
 	envAlarmWebhookMethod,
 	envAlarmWebhookURL,
 	envAlarmWebhookHeader,
-	envAlarmWebhookData,
+	envAlarmWebhookBody,
 }
 
 // Config type.
@@ -50,7 +50,7 @@ type Config struct {
 	AlarmWebhookMethod string
 	AlarmWebhookURL    string
 	AlarmWebhookHeader map[string]string
-	AlarmWebhookData   string
+	AlarmWebhookBody   string
 }
 
 // Load function.
@@ -153,8 +153,8 @@ func (c *Config) parse(key string, value string) error {
 		}
 
 		c.AlarmWebhookHeader = alarmWebhookHeader
-	case envAlarmWebhookData:
-		c.AlarmWebhookData = value
+	case envAlarmWebhookBody:
+		c.AlarmWebhookBody = value
 	}
 
 	return nil

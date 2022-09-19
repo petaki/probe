@@ -133,7 +133,7 @@ func (s *Storage) callAlarm(m interface{}) error {
 		return ErrUnknownModelType
 	}
 
-	data := strings.ReplaceAll(s.Config.AlarmWebhookData, "%n", name)
+	data := strings.ReplaceAll(s.Config.AlarmWebhookBody, "%n", name)
 	data = strings.ReplaceAll(data, "%u", fmt.Sprintf("%.2f", used))
 
 	req, err := http.NewRequest(s.Config.AlarmWebhookMethod, s.Config.AlarmWebhookURL, bytes.NewBuffer([]byte(data)))
