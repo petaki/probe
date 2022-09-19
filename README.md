@@ -66,6 +66,69 @@ PROBE_REDIS_KEY_PREFIX=probe:
 PROBE_REDIS_KEY_TIMEOUT=2592000
 ```
 
+#### Alarm Enabled:
+
+```
+PROBE_ALARM_ENABLED=false
+```
+
+#### Alarm Timeout (in seconds between alarms):
+
+```
+PROBE_ALARM_TIMEOUT=300
+```
+
+#### Alarm CPU Percent:
+
+- `0` - Disabled
+
+```
+PROBE_ALARM_CPU_PERCENT=30
+```
+
+#### Alarm Memory Percent:
+
+- `0` - Disabled
+
+```
+PROBE_ALARM_MEMORY_PERCENT=50
+```
+
+#### Alarm Disk Percent:
+
+- `0` - Disabled
+
+```
+PROBE_ALARM_DISK_PERCENT=80
+```
+
+#### Alarm Webhook Methods:
+
+```
+PROBE_ALARM_WEBHOOK_METHOD=POST
+```
+
+#### Alarm Webhook URL:
+
+```
+PROBE_ALARM_WEBHOOK_URL=http://127.0.0.1:4000/alarm
+```
+
+#### Alarm Webhook Header:
+
+```
+PROBE_ALARM_WEBHOOK_HEADER='{"Authorization": "Bearer TOKEN", "Accept": "application/json"}'
+```
+
+#### Alarm Webhook Body:
+
+- `%n` - Name of the watcher
+- `%u` - Used percent
+
+```
+PROBE_ALARM_WEBHOOK_BODY='{"name": "%n", "used": %u}'
+```
+
 ## Running the tests
 
 You can run the tests using the following command:
