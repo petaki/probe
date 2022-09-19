@@ -62,10 +62,10 @@ func (s *Storage) Save(m interface{}) error {
 	case model.CPU:
 		_, err = s.hset(key, s.field(), value.Used)
 		callAlarm = s.Config.AlarmEnabled && s.Config.AlarmCPUPercent > 0 && value.Used >= s.Config.AlarmCPUPercent
-	case model.Disk:
+	case model.Memory:
 		_, err = s.hset(key, s.field(), value.Used)
 		callAlarm = s.Config.AlarmEnabled && s.Config.AlarmMemoryPercent > 0 && value.Used >= s.Config.AlarmMemoryPercent
-	case model.Memory:
+	case model.Disk:
 		_, err = s.hset(key, s.field(), value.Used)
 		callAlarm = s.Config.AlarmEnabled && s.Config.AlarmDiskPercent > 0 && value.Used >= s.Config.AlarmDiskPercent
 	}
