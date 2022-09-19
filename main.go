@@ -1,4 +1,4 @@
-package main // import "github.com/petaki/probe"
+package main
 
 import (
 	"fmt"
@@ -11,22 +11,30 @@ import (
 )
 
 var (
-	mainStorage = storage.Storage{}
+	mainStorage = &storage.Storage{}
 )
 
 func init() {
-	fmt.Println("Starting Probe...")
+	fmt.Println()
+	fmt.Println("  🔍 Starting Probe...")
+	fmt.Println()
 
 	mainConfig, err := config.Load()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	mainStorage = storage.New(&mainConfig)
+	mainStorage = storage.New(mainConfig)
+
+	if mainConfig.AlarmEnabled {
+		fmt.Println("  🚨 Alarm armed.")
+		fmt.Println()
+	}
 }
 
 func main() {
-	fmt.Println("Probe is watching.")
+	fmt.Println("  🤖 Probe is watching.")
+	fmt.Println()
 
-	watcher.Watch(&mainStorage)
+	watcher.Watch(mainStorage)
 }
