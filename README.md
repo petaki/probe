@@ -102,7 +102,7 @@ PROBE_ALARM_MEMORY_PERCENT=50
 PROBE_ALARM_DISK_PERCENT=80
 ```
 
-#### Alarm Webhook Methods:
+#### Alarm Webhook Method:
 
 ```
 PROBE_ALARM_WEBHOOK_METHOD=POST
