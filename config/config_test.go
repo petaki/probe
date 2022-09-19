@@ -69,7 +69,7 @@ func TestLoadAndParse(t *testing.T) {
 		t.Errorf("Expected alarm webhook header map[Accept:application/json Authorization:Bearer TOKEN], but got %v", config.AlarmWebhookHeader)
 	}
 
-	if config.AlarmWebhookData != "{\"name\": \"%n\", \"used\": %u}" {
-		t.Errorf("Expected alarm webhook data {\"name\": \"%%n\", \"used\": %%u}, but got %v", config.AlarmWebhookData)
+	if config.AlarmWebhookBody != "{\"name\": \"%n\", \"used\": %u}" {
+		t.Errorf("Expected alarm webhook body {\"name\": \"%%n\", \"used\": %%u}, but got %v", config.AlarmWebhookBody)
 	}
 }
