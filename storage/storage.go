@@ -16,14 +16,25 @@ import (
 
 // Storage type.
 type Storage struct {
-	Client *http.Client
 	Config *config.Config
 	Pool   *redis.Pool
+	Client *http.Client
 }
 
 // New function.
 func New(config *config.Config) *Storage {
+	var pool *redis.Pool
 	var client *http.Client
+
+	if config.DataLogEnabled {
+		pool = &redis.Pool{
+			MaxIdle:     3,
+			IdleTimeout: 240 * time.Second,
+			Dial: func() (redis.Conn, error) {
+				return redis.DialURL(config.RedisURL)
+			},
+		}
+	}
 
 	if config.AlarmEnabled {
 		client = &http.Client{
@@ -32,62 +43,166 @@ func New(config *config.Config) *Storage {
 	}
 
 	return &Storage{
-		Client: client,
 		Config: config,
-		Pool: &redis.Pool{
-			MaxIdle:     3,
-			IdleTimeout: 240 * time.Second,
-			Dial: func() (redis.Conn, error) {
-				return redis.DialURL(config.RedisURL)
-			},
-		},
+		Pool:   pool,
+		Client: client,
 	}
 }
 
 // Save function.
 func (s *Storage) Save(m interface{}) error {
+	var err error
+
+	if s.Config.DataLogEnabled {
+		err = s.saveDataLog(m)
+		if err != nil {
+			return err
+		}
+	}
+
+	if s.Config.AlarmEnabled {
+		err = s.saveAlarm(m)
+		if err != nil {
+			return err
+		}
+	}
+
+	if !s.Config.DataLogEnabled {
+		err = s.printValue(m)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// SaveAlarmConfig function.
+func (s *Storage) SaveAlarmConfig() error {
+	if !s.Config.DataLogEnabled {
+		return nil
+	}
+
+	conn := s.Pool.Get()
+	defer conn.Close()
+
+	alarm := &model.Alarm{
+		CPU:    s.Config.AlarmCPUPercent,
+		Memory: s.Config.AlarmMemoryPercent,
+		Disk:   s.Config.AlarmDiskPercent,
+	}
+
+	_, err := conn.Do(
+		"HSET", redis.Args{}.Add(fmt.Sprintf("%salarm", s.Config.RedisKeyPrefix)).AddFlat(alarm)...,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DeleteAlarmConfig function.
+func (s *Storage) DeleteAlarmConfig() error {
+	if !s.Config.DataLogEnabled {
+		return nil
+	}
+
+	conn := s.Pool.Get()
+	defer conn.Close()
+
+	_, err := conn.Do(
+		"DEL", fmt.Sprintf("%salarm", s.Config.RedisKeyPrefix),
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Storage) saveDataLog(m interface{}) error {
+	conn := s.Pool.Get()
+	defer conn.Close()
+
 	key, err := s.key(m)
 	if err != nil {
 		return err
 	}
 
-	exists, err := s.exists(key)
+	exists, err := redis.Bool(conn.Do("EXISTS", key))
 	if err != nil {
 		return err
 	}
 
-	callAlarm := false
+	err = conn.Send("MULTI")
+	if err != nil {
+		return err
+	}
 
 	switch value := m.(type) {
 	case model.CPU:
-		_, err = s.hset(key, s.field(), value.Used)
-		callAlarm = s.Config.AlarmEnabled && s.Config.AlarmCPUPercent > 0 && value.Used >= s.Config.AlarmCPUPercent
+		err = conn.Send(
+			"HSET", key, s.field(), value.Used,
+		)
 	case model.Memory:
-		_, err = s.hset(key, s.field(), value.Used)
-		callAlarm = s.Config.AlarmEnabled && s.Config.AlarmMemoryPercent > 0 && value.Used >= s.Config.AlarmMemoryPercent
+		err = conn.Send(
+			"HSET", key, s.field(), value.Used,
+		)
 	case model.Disk:
-		_, err = s.hset(key, s.field(), value.Used)
-		callAlarm = s.Config.AlarmEnabled && s.Config.AlarmDiskPercent > 0 && value.Used >= s.Config.AlarmDiskPercent
+		err = conn.Send(
+			"HSET", key, s.field(), value.Used,
+		)
 	}
-
 	if err != nil {
 		return err
 	}
 
 	if !exists {
-		_, err = s.expire(key, s.Config.RedisKeyTimeout)
+		err = conn.Send(
+			"EXPIRE", key, s.Config.DataLogTimeout,
+		)
 		if err != nil {
 			return err
 		}
 	}
 
-	if callAlarm {
-		key, err = s.alarmKey(m)
+	_, err = conn.Do("EXEC")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Storage) saveAlarm(m interface{}) error {
+	callAlarm := false
+
+	switch value := m.(type) {
+	case model.CPU:
+		callAlarm = s.Config.AlarmCPUPercent > 0 && value.Used >= s.Config.AlarmCPUPercent
+	case model.Memory:
+		callAlarm = s.Config.AlarmMemoryPercent > 0 && value.Used >= s.Config.AlarmMemoryPercent
+	case model.Disk:
+		callAlarm = s.Config.AlarmDiskPercent > 0 && value.Used >= s.Config.AlarmDiskPercent
+	default:
+		return ErrUnknownModelType
+	}
+
+	if !callAlarm {
+		return nil
+	}
+
+	if s.Config.DataLogEnabled {
+		conn := s.Pool.Get()
+		defer conn.Close()
+
+		alarmKey, err := s.alarmKey(m)
 		if err != nil {
 			return err
 		}
 
-		exists, err = s.exists(key)
+		exists, err := redis.Bool(conn.Do("EXISTS", alarmKey))
 		if err != nil {
 			return err
 		}
@@ -98,18 +213,39 @@ func (s *Storage) Save(m interface{}) error {
 
 		err = s.callAlarm(m)
 		if err != nil {
-			return nil
+			return err
 		}
 
-		_, err = s.set(key, "true")
+		err = conn.Send("MULTI")
 		if err != nil {
 			return err
 		}
 
-		_, err = s.expire(key, s.Config.AlarmTimeout)
+		err = conn.Send(
+			"SET", alarmKey, true,
+		)
 		if err != nil {
 			return err
 		}
+
+		err = conn.Send(
+			"EXPIRE", alarmKey, s.Config.AlarmTimeout,
+		)
+		if err != nil {
+			return err
+		}
+
+		_, err = conn.Do("EXEC")
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	err := s.callAlarm(m)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -159,19 +295,21 @@ func (s *Storage) callAlarm(m interface{}) error {
 	return nil
 }
 
-func (s *Storage) alarmKey(m interface{}) (string, error) {
+func (s *Storage) printValue(m interface{}) error {
 	switch value := m.(type) {
 	case model.CPU:
-		return fmt.Sprintf("%salarm:cpu", s.Config.RedisKeyPrefix), nil
+		fmt.Printf("  ⚡ CPU: %.2f%%\n", value.Used)
 	case model.Memory:
-		return fmt.Sprintf("%salarm:memory", s.Config.RedisKeyPrefix), nil
+		fmt.Printf("  📦 Memory: %.2f%%\n", value.Used)
 	case model.Disk:
-		encodedPath := base64.StdEncoding.EncodeToString([]byte(value.Path))
-
-		return fmt.Sprintf("%salarm:disk:%s", s.Config.RedisKeyPrefix, encodedPath), nil
+		fmt.Printf("  💾 Disk:%s: %.2f%%\n", value.Path, value.Used)
 	default:
-		return "", ErrUnknownModelType
+		return ErrUnknownModelType
 	}
+
+	fmt.Println()
+
+	return nil
 }
 
 func (s *Storage) key(m interface{}) (string, error) {
@@ -221,30 +359,17 @@ func (s *Storage) field() string {
 	return strconv.FormatInt(date.Unix(), 10)
 }
 
-func (s *Storage) exists(key string) (bool, error) {
-	conn := s.Pool.Get()
-	defer conn.Close()
+func (s *Storage) alarmKey(m interface{}) (string, error) {
+	switch value := m.(type) {
+	case model.CPU:
+		return fmt.Sprintf("%salarm:cpu", s.Config.RedisKeyPrefix), nil
+	case model.Memory:
+		return fmt.Sprintf("%salarm:memory", s.Config.RedisKeyPrefix), nil
+	case model.Disk:
+		encodedPath := base64.StdEncoding.EncodeToString([]byte(value.Path))
 
-	return redis.Bool(conn.Do("EXISTS", key))
-}
+		return fmt.Sprintf("%salarm:disk:%s", s.Config.RedisKeyPrefix, encodedPath), nil
+	}
 
-func (s *Storage) set(key string, value interface{}) (string, error) {
-	conn := s.Pool.Get()
-	defer conn.Close()
-
-	return redis.String(conn.Do("SET", key, value))
-}
-
-func (s *Storage) hset(key string, field string, value interface{}) (bool, error) {
-	conn := s.Pool.Get()
-	defer conn.Close()
-
-	return redis.Bool(conn.Do("HSET", key, field, value))
-}
-
-func (s *Storage) expire(key string, timeout int) (bool, error) {
-	conn := s.Pool.Get()
-	defer conn.Close()
-
-	return redis.Bool(conn.Do("EXPIRE", key, timeout))
+	return "", ErrUnknownModelType
 }

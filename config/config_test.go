@@ -25,11 +25,15 @@ func TestLoadAndParse(t *testing.T) {
 		t.Errorf("Expected redis prefix probe:, but got %v", config.RedisKeyPrefix)
 	}
 
-	if config.RedisKeyTimeout != 2592000 {
-		t.Errorf("Expected redis timeout 2592000, but got %v", config.RedisKeyTimeout)
+	if !config.DataLogEnabled {
+		t.Errorf("Expected data log enabled true, but got %v", config.DataLogEnabled)
 	}
 
-	if config.AlarmEnabled != false {
+	if config.DataLogTimeout != 2592000 {
+		t.Errorf("Expected data log timeout 2592000, but got %v", config.DataLogTimeout)
+	}
+
+	if config.AlarmEnabled {
 		t.Errorf("Expected alarm enabled false, but got %v", config.AlarmEnabled)
 	}
 
