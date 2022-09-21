@@ -65,7 +65,7 @@ PROBE_REDIS_KEY_PREFIX=probe:
 #### Data Log Enabled:
 
 ```
-PROBE_DATA_LOG_ENABLED=false
+PROBE_DATA_LOG_ENABLED=true
 ```
 
 #### Data Log Timeout (in seconds):
