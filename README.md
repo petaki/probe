@@ -60,11 +60,21 @@ PROBE_REDIS_URL=redis://127.0.0.1:6379/0
 PROBE_REDIS_KEY_PREFIX=probe:
 ```
 
-#### Redis Key Timeout (in seconds):
+---
+
+#### Data Log Enabled:
 
 ```
-PROBE_REDIS_KEY_TIMEOUT=2592000
+PROBE_DATA_LOG_ENABLED=false
 ```
+
+#### Data Log Timeout (in seconds):
+
+```
+PROBE_DATA_LOG_TIMEOUT=2592000
+```
+
+---
 
 #### Alarm Enabled:
 
@@ -73,6 +83,8 @@ PROBE_ALARM_ENABLED=false
 ```
 
 #### Alarm Timeout (in seconds between alarms):
+
+- Required: `PROBE_DATA_LOG_ENABLED=true`
 
 ```
 PROBE_ALARM_TIMEOUT=300
