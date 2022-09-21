@@ -10,7 +10,8 @@ import (
 const (
 	envRedisURL           = "PROBE_REDIS_URL"
 	envRedisKeyPrefix     = "PROBE_REDIS_KEY_PREFIX"
-	envRedisKeyTimeout    = "PROBE_REDIS_KEY_TIMEOUT"
+	envDataLogEnabled     = "PROBE_DATA_LOG_ENABLED"
+	envDataLogTimeout     = "PROBE_DATA_LOG_TIMEOUT"
 	envAlarmEnabled       = "PROBE_ALARM_ENABLED"
 	envAlarmTimeout       = "PROBE_ALARM_TIMEOUT"
 	envAlarmCPUPercent    = "PROBE_ALARM_CPU_PERCENT"
@@ -25,7 +26,8 @@ const (
 var envKeys = []string{
 	envRedisURL,
 	envRedisKeyPrefix,
-	envRedisKeyTimeout,
+	envDataLogEnabled,
+	envDataLogTimeout,
 	envAlarmEnabled,
 	envAlarmTimeout,
 	envAlarmCPUPercent,
@@ -41,7 +43,8 @@ var envKeys = []string{
 type Config struct {
 	RedisURL           string
 	RedisKeyPrefix     string
-	RedisKeyTimeout    int
+	DataLogEnabled     bool
+	DataLogTimeout     int
 	AlarmEnabled       bool
 	AlarmTimeout       int
 	AlarmCPUPercent    float64
@@ -78,17 +81,24 @@ func (c *Config) parse(key string, value string) error {
 		c.RedisURL = value
 	case envRedisKeyPrefix:
 		c.RedisKeyPrefix = value
-	case envRedisKeyTimeout:
-		redisKeyTimeout, err := strconv.Atoi(value)
+	case envDataLogEnabled:
+		dataLogEnabled, err := strconv.ParseBool(value)
 		if err != nil {
 			return err
 		}
 
-		if redisKeyTimeout < 1 {
+		c.DataLogEnabled = dataLogEnabled
+	case envDataLogTimeout:
+		dataLogTimeout, err := strconv.Atoi(value)
+		if err != nil {
+			return err
+		}
+
+		if dataLogTimeout < 1 {
 			return ErrInvalidTimeout
 		}
 
-		c.RedisKeyTimeout = redisKeyTimeout
+		c.DataLogTimeout = dataLogTimeout
 	case envAlarmEnabled:
 		alarmEnabled, err := strconv.ParseBool(value)
 		if err != nil {

@@ -13,7 +13,11 @@ func TestNew(t *testing.T) {
 		t.Errorf("The config is a nil pointer")
 	}
 
-	if storage.Pool == nil {
-		t.Errorf("The pool is a nil pointer")
+	if storage.Client != nil {
+		t.Errorf("The client is not a nil pointer")
+	}
+
+	if storage.Pool != nil {
+		t.Errorf("The pool is not a nil pointer")
 	}
 }

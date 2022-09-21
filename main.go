@@ -26,9 +26,24 @@ func init() {
 
 	mainStorage = storage.New(mainConfig)
 
+	if mainConfig.DataLogEnabled {
+		fmt.Println("  📡 Data logging is enabled.")
+		fmt.Println()
+	}
+
 	if mainConfig.AlarmEnabled {
 		fmt.Println("  🚨 Alarm is armed.")
 		fmt.Println()
+
+		err = mainStorage.SaveAlarmConfig()
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		err = mainStorage.DeleteAlarmConfig()
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 
