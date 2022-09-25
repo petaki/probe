@@ -134,11 +134,14 @@ PROBE_ALARM_WEBHOOK_HEADER='{"Authorization": "Bearer TOKEN", "Accept": "applica
 
 #### Alarm Webhook Body:
 
+- `%p` - Probe
 - `%n` - Name of the watcher
+- `%a` - Alarm percent
 - `%u` - Used percent
+- `%t` - Timestamp in `RFC3339` format
 
 ```
-PROBE_ALARM_WEBHOOK_BODY='{"name": "%n", "used": %u}'
+PROBE_ALARM_WEBHOOK_BODY='{"probe": "%p", "name": "%n", "alarm": %a, "used": %u, "timestamp": "%t"}'
 ```
 
 ## Running the tests
