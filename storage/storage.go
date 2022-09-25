@@ -53,6 +53,13 @@ func New(config *config.Config) *Storage {
 func (s *Storage) Save(m interface{}) error {
 	var err error
 
+	switch value := m.(type) {
+	case model.Disk:
+		if s.isPathIgnored(value.Path) {
+			return nil
+		}
+	}
+
 	if s.Config.DataLogEnabled {
 		err = s.saveDataLog(m)
 		if err != nil {
@@ -317,6 +324,42 @@ func (s *Storage) printValue(m interface{}) error {
 	fmt.Println()
 
 	return nil
+}
+
+func (s *Storage) isPathIgnored(path string) bool {
+	for _, pattern := range s.Config.DiskIgnored {
+		value := strings.ReplaceAll(pattern, "*", "")
+
+		if pattern[0:1] == "*" && pattern[len(pattern)-1:] == "*" {
+			if strings.Contains(path, value) {
+				return true
+			}
+
+			continue
+		}
+
+		if pattern[0:1] == "*" {
+			if strings.HasSuffix(path, value) {
+				return true
+			}
+
+			continue
+		}
+
+		if pattern[len(pattern)-1:] == "*" {
+			if strings.HasPrefix(path, value) {
+				return true
+			}
+
+			continue
+		}
+
+		if value == path {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (s *Storage) key(m interface{}) (string, error) {
