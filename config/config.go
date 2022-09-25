@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
 
 const (
+	envDiskIgnored        = "PROBE_DISK_IGNORED"
 	envRedisURL           = "PROBE_REDIS_URL"
 	envRedisKeyPrefix     = "PROBE_REDIS_KEY_PREFIX"
 	envDataLogEnabled     = "PROBE_DATA_LOG_ENABLED"
@@ -24,6 +26,7 @@ const (
 )
 
 var envKeys = []string{
+	envDiskIgnored,
 	envRedisURL,
 	envRedisKeyPrefix,
 	envDataLogEnabled,
@@ -41,6 +44,7 @@ var envKeys = []string{
 
 // Config type.
 type Config struct {
+	DiskIgnored        []string
 	RedisURL           string
 	RedisKeyPrefix     string
 	DataLogEnabled     bool
@@ -77,6 +81,8 @@ func Load() (*Config, error) {
 
 func (c *Config) parse(key string, value string) error {
 	switch key {
+	case envDiskIgnored:
+		c.DiskIgnored = strings.Split(value, ",")
 	case envRedisURL:
 		c.RedisURL = value
 	case envRedisKeyPrefix:

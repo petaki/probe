@@ -17,6 +17,18 @@ func TestLoadAndParse(t *testing.T) {
 		t.Errorf("Cannot load the environment variables.")
 	}
 
+	for _, value := range config.DiskIgnored {
+		if value == "/dev" {
+			continue
+		}
+
+		if value == "/var/lib/docker/*" {
+			continue
+		}
+
+		t.Errorf("Expected disk ignored [/dev /var/lib/docker/*], but got %v", config.DiskIgnored)
+	}
+
 	if config.RedisURL != "redis://127.0.0.1:6379/0" {
 		t.Errorf("Expected redis URL redis://127.0.0.1:6379/0, but got %v", config.RedisURL)
 	}
