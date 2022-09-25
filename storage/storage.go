@@ -259,32 +259,39 @@ func (s *Storage) saveAlarm(m interface{}) error {
 }
 
 func (s *Storage) callAlarm(m interface{}) error {
+	probe := strings.ReplaceAll(s.Config.RedisKeyPrefix, ":", "")
+
 	var name string
 	var used float64
 	var alarm float64
+	var link string
 
 	switch value := m.(type) {
 	case model.CPU:
 		name = "CPU"
 		alarm = s.Config.AlarmCPUPercent
 		used = value.Used
+		link = fmt.Sprintf("/cpu?probe=%s", probe)
 	case model.Memory:
 		name = "Memory"
 		alarm = s.Config.AlarmMemoryPercent
 		used = value.Used
+		link = fmt.Sprintf("/memory?probe=%s", probe)
 	case model.Disk:
 		name = fmt.Sprintf("Disk:%s", value.Path)
 		alarm = s.Config.AlarmDiskPercent
 		used = value.Used
+		link = fmt.Sprintf("/disk?probe=%s&path=%s", probe, value.Path)
 	default:
 		return ErrUnknownModelType
 	}
 
-	body := strings.ReplaceAll(s.Config.AlarmWebhookBody, "%p", strings.ReplaceAll(s.Config.RedisKeyPrefix, ":", ""))
+	body := strings.ReplaceAll(s.Config.AlarmWebhookBody, "%p", probe)
 	body = strings.ReplaceAll(body, "%n", name)
 	body = strings.ReplaceAll(body, "%a", fmt.Sprintf("%.2f", alarm))
 	body = strings.ReplaceAll(body, "%u", fmt.Sprintf("%.2f", used))
 	body = strings.ReplaceAll(body, "%t", time.Now().Format(time.RFC3339))
+	body = strings.ReplaceAll(body, "%l", link)
 
 	req, err := http.NewRequest(s.Config.AlarmWebhookMethod, s.Config.AlarmWebhookURL, bytes.NewBuffer([]byte(body)))
 	if err != nil {
