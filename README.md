@@ -48,6 +48,19 @@ cp .env.example .env
 
 The configruation is stored in the `.env` file.
 
+#### Disk Ignored
+
+- `PATTERN*` - Prefix
+- `*PATTERN` - Suffix
+- `*PATTERN*` - Contains
+- `PATTERN` - Exact match
+
+```
+PROBE_DISK_IGNORED=/dev,/var/lib/docker/*
+```
+
+---
+
 #### Redis URL:
 
 ```
