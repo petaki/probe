@@ -286,11 +286,14 @@ func (s *Storage) callAlarm(m interface{}) error {
 		return ErrUnknownModelType
 	}
 
+	now := time.Now()
+
 	body := strings.ReplaceAll(s.Config.AlarmWebhookBody, "%p", probe)
 	body = strings.ReplaceAll(body, "%n", name)
 	body = strings.ReplaceAll(body, "%a", fmt.Sprintf("%.2f", alarm))
 	body = strings.ReplaceAll(body, "%u", fmt.Sprintf("%.2f", used))
-	body = strings.ReplaceAll(body, "%t", time.Now().Format(time.RFC3339))
+	body = strings.ReplaceAll(body, "%t", now.Format(time.RFC3339))
+	body = strings.ReplaceAll(body, "%x", strconv.FormatInt(now.Unix(), 10))
 	body = strings.ReplaceAll(body, "%l", link)
 
 	req, err := http.NewRequest(s.Config.AlarmWebhookMethod, s.Config.AlarmWebhookURL, bytes.NewBuffer([]byte(body)))
