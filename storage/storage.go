@@ -147,18 +147,20 @@ func (s *Storage) saveDataLog(m interface{}) error {
 		return err
 	}
 
+	now := time.Now()
+
 	switch value := m.(type) {
 	case model.CPU:
 		err = conn.Send(
-			"HSET", key, s.field(), value.Used,
+			"HSET", key, s.field(&now), value.Used,
 		)
 	case model.Memory:
 		err = conn.Send(
-			"HSET", key, s.field(), value.Used,
+			"HSET", key, s.field(&now), value.Used,
 		)
 	case model.Disk:
 		err = conn.Send(
-			"HSET", key, s.field(), value.Used,
+			"HSET", key, s.field(&now), value.Used,
 		)
 	}
 	if err != nil {
@@ -221,12 +223,15 @@ func (s *Storage) filterAlarm(m interface{}) error {
 	conn := s.Pool.Get()
 	defer conn.Close()
 
-	alarmKey, err := s.alarmKey(m)
-	if err != nil {
-		return err
-	}
+	var alarmKey string
+	var err error
 
 	if s.Config.AlarmFilterSleep > 0 {
+		alarmKey, err = s.alarmKey(m)
+		if err != nil {
+			return err
+		}
+
 		exists, err := redis.Bool(conn.Do("EXISTS", alarmKey))
 		if err != nil {
 			return err
@@ -234,6 +239,57 @@ func (s *Storage) filterAlarm(m interface{}) error {
 
 		if exists {
 			return nil
+		}
+	}
+
+	if s.Config.AlarmFilterWait > 1 {
+		key, err := s.key(m)
+		if err != nil {
+			return err
+		}
+
+		var fields []string
+
+		now := time.Now()
+		end := time.Date(
+			now.Year(),
+			now.Month(),
+			now.Day(),
+			now.Hour(),
+			now.Minute()-1,
+			0,
+			0,
+			now.Location(),
+		)
+
+		start := end.Add(-time.Duration(s.Config.AlarmFilterWait-2) * time.Minute)
+
+		for current := start; !current.After(end); current = current.Add(time.Minute) {
+			fields = append(fields, s.field(&current))
+		}
+
+		values, err := redis.Float64s(conn.Do("HMGET", redis.Args{}.Add(key).AddFlat(fields)...))
+		if err != nil {
+			return err
+		}
+
+		for _, value := range values {
+			switch m.(type) {
+			case model.CPU:
+				if value < s.Config.AlarmCPUPercent {
+					return nil
+				}
+			case model.Memory:
+				if value < s.Config.AlarmMemoryPercent {
+					return nil
+				}
+			case model.Disk:
+				if value < s.Config.AlarmDiskPercent {
+					return nil
+				}
+			default:
+				return ErrUnknownModelType
+			}
 		}
 	}
 
@@ -416,17 +472,16 @@ func (s *Storage) timestamp() string {
 	return strconv.FormatInt(date.Unix(), 10)
 }
 
-func (s *Storage) field() string {
-	now := time.Now()
+func (s *Storage) field(t *time.Time) string {
 	date := time.Date(
-		now.Year(),
-		now.Month(),
-		now.Day(),
-		now.Hour(),
-		now.Minute(),
+		t.Year(),
+		t.Month(),
+		t.Day(),
+		t.Hour(),
+		t.Minute(),
 		0,
 		0,
-		now.Location(),
+		t.Location(),
 	)
 
 	return strconv.FormatInt(date.Unix(), 10)
