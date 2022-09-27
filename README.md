@@ -75,7 +75,7 @@ PROBE_REDIS_KEY_PREFIX=probe:
 
 ---
 
-#### Data Log Enabled:
+#### Data Log Enabled (Redis required):
 
 ```
 PROBE_DATA_LOG_ENABLED=true
