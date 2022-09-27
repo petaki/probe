@@ -15,7 +15,6 @@ const (
 	envDataLogEnabled     = "PROBE_DATA_LOG_ENABLED"
 	envDataLogTimeout     = "PROBE_DATA_LOG_TIMEOUT"
 	envAlarmEnabled       = "PROBE_ALARM_ENABLED"
-	envAlarmTimeout       = "PROBE_ALARM_TIMEOUT"
 	envAlarmCPUPercent    = "PROBE_ALARM_CPU_PERCENT"
 	envAlarmMemoryPercent = "PROBE_ALARM_MEMORY_PERCENT"
 	envAlarmDiskPercent   = "PROBE_ALARM_DISK_PERCENT"
@@ -23,6 +22,9 @@ const (
 	envAlarmWebhookURL    = "PROBE_ALARM_WEBHOOK_URL"
 	envAlarmWebhookHeader = "PROBE_ALARM_WEBHOOK_HEADER"
 	envAlarmWebhookBody   = "PROBE_ALARM_WEBHOOK_BODY"
+	envAlarmFilterEnabled = "PROBE_ALARM_FILTER_ENABLED"
+	envAlarmFilterWait    = "PROBE_ALARM_FILTER_WAIT"
+	envAlarmFilterSleep   = "PROBE_ALARM_FILTER_SLEEP"
 )
 
 var envKeys = []string{
@@ -32,7 +34,6 @@ var envKeys = []string{
 	envDataLogEnabled,
 	envDataLogTimeout,
 	envAlarmEnabled,
-	envAlarmTimeout,
 	envAlarmCPUPercent,
 	envAlarmMemoryPercent,
 	envAlarmDiskPercent,
@@ -40,6 +41,9 @@ var envKeys = []string{
 	envAlarmWebhookURL,
 	envAlarmWebhookHeader,
 	envAlarmWebhookBody,
+	envAlarmFilterEnabled,
+	envAlarmFilterWait,
+	envAlarmFilterSleep,
 }
 
 // Config type.
@@ -50,7 +54,6 @@ type Config struct {
 	DataLogEnabled     bool
 	DataLogTimeout     int
 	AlarmEnabled       bool
-	AlarmTimeout       int
 	AlarmCPUPercent    float64
 	AlarmMemoryPercent float64
 	AlarmDiskPercent   float64
@@ -58,6 +61,9 @@ type Config struct {
 	AlarmWebhookURL    string
 	AlarmWebhookHeader map[string]string
 	AlarmWebhookBody   string
+	AlarmFilterEnabled bool
+	AlarmFilterWait    int
+	AlarmFilterSleep   int
 }
 
 // Load function.
@@ -112,17 +118,6 @@ func (c *Config) parse(key string, value string) error {
 		}
 
 		c.AlarmEnabled = alarmEnabled
-	case envAlarmTimeout:
-		alarmTimeout, err := strconv.Atoi(value)
-		if err != nil {
-			return err
-		}
-
-		if alarmTimeout < 1 {
-			return ErrInvalidTimeout
-		}
-
-		c.AlarmTimeout = alarmTimeout
 	case envAlarmCPUPercent:
 		alarmCPUPercent, err := strconv.ParseFloat(value, 64)
 		if err != nil {
@@ -171,6 +166,35 @@ func (c *Config) parse(key string, value string) error {
 		c.AlarmWebhookHeader = alarmWebhookHeader
 	case envAlarmWebhookBody:
 		c.AlarmWebhookBody = value
+	case envAlarmFilterEnabled:
+		alarmFilterEnabled, err := strconv.ParseBool(value)
+		if err != nil {
+			return err
+		}
+
+		c.AlarmFilterEnabled = alarmFilterEnabled
+	case envAlarmFilterWait:
+		alarmFilterWait, err := strconv.Atoi(value)
+		if err != nil {
+			return err
+		}
+
+		if alarmFilterWait < 0 {
+			return ErrInvalidTimeout
+		}
+
+		c.AlarmFilterWait = alarmFilterWait
+	case envAlarmFilterSleep:
+		alarmFilterSleep, err := strconv.Atoi(value)
+		if err != nil {
+			return err
+		}
+
+		if alarmFilterSleep < 0 {
+			return ErrInvalidTimeout
+		}
+
+		c.AlarmFilterSleep = alarmFilterSleep
 	}
 
 	return nil

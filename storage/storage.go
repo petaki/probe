@@ -236,7 +236,7 @@ func (s *Storage) saveAlarm(m interface{}) error {
 		}
 
 		err = conn.Send(
-			"EXPIRE", alarmKey, s.Config.AlarmTimeout,
+			"EXPIRE", alarmKey, s.Config.AlarmFilterSleep,
 		)
 		if err != nil {
 			return err

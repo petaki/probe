@@ -49,10 +49,6 @@ func TestLoadAndParse(t *testing.T) {
 		t.Errorf("Expected alarm enabled false, but got %v", config.AlarmEnabled)
 	}
 
-	if config.AlarmTimeout != 300 {
-		t.Errorf("Expected alarm timeout 300, but got %v", config.AlarmTimeout)
-	}
-
 	if config.AlarmCPUPercent != 30 {
 		t.Errorf("Expected alarm cpu percent 20, but got %v", config.AlarmCPUPercent)
 	}
@@ -87,5 +83,17 @@ func TestLoadAndParse(t *testing.T) {
 
 	if config.AlarmWebhookBody != "{\"probe\": \"%p\", \"name\": \"%n\", \"alarm\": %a, \"used\": %u, \"timestamp_rfc3339\": \"%t\", \"timestamp_unix\": %x, \"link\": \"%l\"}" {
 		t.Errorf("Expected alarm webhook body {\"probe\": \"%%p\", \"name\": \"%%n\", \"alarm\": %%a, \"used\": %%u, \"timestamp_rfc3339\": \"%%t\", \"timestamp_unix\": %%x, \"link\": \"%%l\"}, but got %v", config.AlarmWebhookBody)
+	}
+
+	if config.AlarmFilterEnabled {
+		t.Errorf("Expected alarm filter enabled false, but got %v", config.AlarmFilterEnabled)
+	}
+
+	if config.AlarmFilterWait != 5 {
+		t.Errorf("Expected alarm filter wait 5, but got %v", config.AlarmFilterWait)
+	}
+
+	if config.AlarmFilterSleep != 300 {
+		t.Errorf("Expected alarm filter sleep 300, but got %v", config.AlarmFilterSleep)
 	}
 }

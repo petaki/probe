@@ -161,11 +161,15 @@ PROBE_ALARM_FILTER_ENABLED=false
 
 #### Alarm Filter Wait (in minutes before first alarm):
 
+- `0` - Disabled
+
 ```
 PROBE_ALARM_FILTER_WAIT=5
 ```
 
 #### Alarm Filter Sleep (in seconds between alarms):
+
+- `0` - Disabled
 
 ```
 PROBE_ALARM_FILTER_SLEEP=300
