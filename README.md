@@ -95,14 +95,6 @@ PROBE_DATA_LOG_TIMEOUT=2592000
 PROBE_ALARM_ENABLED=false
 ```
 
-#### Alarm Timeout (in seconds between alarms):
-
-- Required: `PROBE_DATA_LOG_ENABLED=true`
-
-```
-PROBE_ALARM_TIMEOUT=300
-```
-
 #### Alarm CPU Percent:
 
 - `0` - Disabled
@@ -157,6 +149,26 @@ PROBE_ALARM_WEBHOOK_HEADER='{"Authorization": "Bearer TOKEN", "Accept": "applica
 
 ```
 PROBE_ALARM_WEBHOOK_BODY='{"probe": "%p", "name": "%n", "alarm": %a, "used": %u, "timestamp_rfc3339": "%t", "timestamp_unix": %x, "link": "%l"}'
+```
+
+---
+
+#### Alarm Filter Enabled (Redis required):
+
+```
+PROBE_ALARM_FILTER_ENABLED=false
+```
+
+#### Alarm Filter Wait (in minutes before first alarm):
+
+```
+PROBE_ALARM_FILTER_WAIT=5
+```
+
+#### Alarm Filter Sleep (in seconds between alarms):
+
+```
+PROBE_ALARM_FILTER_SLEEP=300
 ```
 
 ## Running the tests
