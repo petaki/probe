@@ -26,7 +26,7 @@ func New(config *config.Config) *Storage {
 	var pool *redis.Pool
 	var client *http.Client
 
-	if config.DataLogEnabled {
+	if config.DataLogEnabled || config.AlarmFilterEnabled {
 		pool = &redis.Pool{
 			MaxIdle:     3,
 			IdleTimeout: 240 * time.Second,
@@ -200,15 +200,33 @@ func (s *Storage) saveAlarm(m interface{}) error {
 		return nil
 	}
 
-	if s.Config.DataLogEnabled {
-		conn := s.Pool.Get()
-		defer conn.Close()
-
-		alarmKey, err := s.alarmKey(m)
+	if s.Config.AlarmFilterEnabled {
+		err := s.filterAlarm(m)
 		if err != nil {
 			return err
 		}
 
+		return nil
+	}
+
+	err := s.callAlarm(m)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Storage) filterAlarm(m interface{}) error {
+	conn := s.Pool.Get()
+	defer conn.Close()
+
+	alarmKey, err := s.alarmKey(m)
+	if err != nil {
+		return err
+	}
+
+	if s.Config.AlarmFilterSleep > 0 {
 		exists, err := redis.Bool(conn.Do("EXISTS", alarmKey))
 		if err != nil {
 			return err
@@ -217,12 +235,14 @@ func (s *Storage) saveAlarm(m interface{}) error {
 		if exists {
 			return nil
 		}
+	}
 
-		err = s.callAlarm(m)
-		if err != nil {
-			return err
-		}
+	err = s.callAlarm(m)
+	if err != nil {
+		return err
+	}
 
+	if s.Config.AlarmFilterSleep > 0 {
 		err = conn.Send("MULTI")
 		if err != nil {
 			return err
@@ -246,13 +266,6 @@ func (s *Storage) saveAlarm(m interface{}) error {
 		if err != nil {
 			return err
 		}
-
-		return nil
-	}
-
-	err := s.callAlarm(m)
-	if err != nil {
-		return err
 	}
 
 	return nil
