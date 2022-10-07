@@ -187,6 +187,10 @@ go test -v ./...
 
 You can display the collected data with the [Satellite](https://github.com/petaki/satellite).
 
+## Contributors
+
+- [@dyipon](https://github.com/dyipon) for development ideas, bug reports and testing
+
 ## Reporting Issues
 
 If you are facing a problem with this package or found any bug, please open an issue on [GitHub](https://github.com/petaki/probe/issues).
