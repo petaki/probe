@@ -23,7 +23,7 @@ Downloads can be found at releases page on [GitHub](https://github.com/petaki/pr
 
 #### Prerequisites for building
 
-- GO: `Version >= 1.19` for building
+- GO: `Version >= 1.19`
 
 #### 1. Clone the repository:
 
