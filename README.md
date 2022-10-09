@@ -12,33 +12,38 @@ Before you start, you need to install the prerequisites.
 ### Prerequisites
 
 - Redis: `Version >= 5.0` for data logging
-- GO: `Version >= 1.19` for building
 
 ### Install from binary
 
 Downloads can be found at releases page on [GitHub](https://github.com/petaki/probe/releases).
 
+---
+
 ### Install from source
 
-1. Clone the repository:
+#### Prerequisites for building
+
+- GO: `Version >= 1.19` for building
+
+#### 1. Clone the repository:
 
 ```
 git clone git@github.com:petaki/probe.git
 ```
 
-2. Open the folder:
+#### 2. Open the folder:
 
 ```
 cd probe
 ```
 
-3. Build the Probe:
+#### 3. Build the Probe:
 
 ```
 go build
 ```
 
-4. Copy the example configuration:
+#### 4. Copy the example configuration:
 
 ```
 cp .env.example .env
@@ -48,7 +53,7 @@ cp .env.example .env
 
 The configruation is stored in the `.env` file.
 
-#### Disk Ignored
+### Disk Ignored
 
 - `PATTERN*` - Prefix
 - `*PATTERN` - Suffix
@@ -61,13 +66,13 @@ PROBE_DISK_IGNORED=/dev,/var/lib/docker/*
 
 ---
 
-#### Redis URL:
+### Redis URL
 
 ```
 PROBE_REDIS_URL=redis://127.0.0.1:6379/0
 ```
 
-#### Redis Key Prefix:
+### Redis Key Prefix
 
 ```
 PROBE_REDIS_KEY_PREFIX=probe:
@@ -75,13 +80,13 @@ PROBE_REDIS_KEY_PREFIX=probe:
 
 ---
 
-#### Data Log Enabled (Redis required):
+### Data Log Enabled (Redis required)
 
 ```
 PROBE_DATA_LOG_ENABLED=true
 ```
 
-#### Data Log Timeout (in seconds):
+### Data Log Timeout (in seconds)
 
 ```
 PROBE_DATA_LOG_TIMEOUT=2592000
@@ -89,13 +94,13 @@ PROBE_DATA_LOG_TIMEOUT=2592000
 
 ---
 
-#### Alarm Enabled:
+### Alarm Enabled
 
 ```
 PROBE_ALARM_ENABLED=false
 ```
 
-#### Alarm CPU Percent:
+### Alarm CPU Percent
 
 - `0` - Disabled
 
@@ -103,7 +108,7 @@ PROBE_ALARM_ENABLED=false
 PROBE_ALARM_CPU_PERCENT=30
 ```
 
-#### Alarm Memory Percent:
+### Alarm Memory Percent
 
 - `0` - Disabled
 
@@ -111,7 +116,7 @@ PROBE_ALARM_CPU_PERCENT=30
 PROBE_ALARM_MEMORY_PERCENT=50
 ```
 
-#### Alarm Disk Percent:
+### Alarm Disk Percent
 
 - `0` - Disabled
 
@@ -119,25 +124,25 @@ PROBE_ALARM_MEMORY_PERCENT=50
 PROBE_ALARM_DISK_PERCENT=80
 ```
 
-#### Alarm Webhook Method:
+### Alarm Webhook Method
 
 ```
 PROBE_ALARM_WEBHOOK_METHOD=POST
 ```
 
-#### Alarm Webhook URL:
+### Alarm Webhook URL
 
 ```
 PROBE_ALARM_WEBHOOK_URL=http://127.0.0.1:4000/alarm
 ```
 
-#### Alarm Webhook Header:
+### Alarm Webhook Header
 
 ```
 PROBE_ALARM_WEBHOOK_HEADER='{"Authorization": "Bearer TOKEN", "Accept": "application/json"}'
 ```
 
-#### Alarm Webhook Body:
+### Alarm Webhook Body
 
 - `%p` - Probe
 - `%n` - Name of the watcher
@@ -153,13 +158,13 @@ PROBE_ALARM_WEBHOOK_BODY='{"probe": "%p", "name": "%n", "alarm": %a, "used": %u,
 
 ---
 
-#### Alarm Filter Enabled (Redis required):
+### Alarm Filter Enabled (Redis required)
 
 ```
 PROBE_ALARM_FILTER_ENABLED=false
 ```
 
-#### Alarm Filter Wait (in minutes before first alarm):
+### Alarm Filter Wait (in minutes before first alarm)
 
 - `0` - Disabled
 
@@ -167,7 +172,7 @@ PROBE_ALARM_FILTER_ENABLED=false
 PROBE_ALARM_FILTER_WAIT=5
 ```
 
-#### Alarm Filter Sleep (in seconds between alarms):
+### Alarm Filter Sleep (in seconds between alarms)
 
 - `0` - Disabled
 
