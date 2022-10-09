@@ -1,9 +1,23 @@
 # Probe
 
+A small GO based agent for monitoring CPU, Memory and Disk usage.
+
+```
+
+  🔍 Starting Probe...
+
+  📡 Data logging is enabled.
+
+  🚨 Alarm is armed.
+
+  🤖 Probe is watching.
+  
+```
+
+## Badges
+
 [![Build Status](https://github.com/petaki/probe/workflows/tests/badge.svg)](https://github.com/petaki/probe/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](LICENSE.md)
-
-A small GO based agent for monitoring CPU, Memory and Disk usage.
 
 ## Getting Started
 
