@@ -8,27 +8,27 @@ pre_clean:
 	cp .env.example dist/.env
 
 darwin:
-	GOOS=darwin GOARCH=amd64 go build -o dist/probe .
+	GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -o dist/probe .
 	cd dist && zip probe_$(VERSION)_darwin_amd64.zip .env probe
 	rm -f dist/probe
 
 darwin_arm64:
-	GOOS=darwin GOARCH=arm64 go build -o dist/probe .
+	GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -o dist/probe .
 	cd dist && zip probe_$(VERSION)_darwin_arm64.zip .env probe
 	rm -f dist/probe
 
 linux:
-	GOOS=linux GOARCH=amd64 go build -o dist/probe .
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o dist/probe .
 	cd dist && zip probe_$(VERSION)_linux_amd64.zip .env probe
 	rm -f dist/probe
 
 linux_arm64:
-	GOOS=linux GOARCH=arm64 go build -o dist/probe .
+	GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -o dist/probe .
 	cd dist && zip probe_$(VERSION)_linux_arm64.zip .env probe
 	rm -f dist/probe
 
 windows:
-	GOOS=windows GOARCH=amd64 go build -o dist/probe.exe .
+	GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -o dist/probe.exe .
 	cd dist && zip probe_$(VERSION)_windows_amd64.zip .env probe.exe
 	rm -f dist/probe.exe
 
