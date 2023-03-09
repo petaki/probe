@@ -381,7 +381,7 @@ func (s *Storage) callAlarm(m interface{}) error {
 
 	defer resp.Body.Close()
 
-	if resp.StatusCode > 400 {
+	if resp.StatusCode >= 400 {
 		return ErrBadStatusCode
 	}
 
