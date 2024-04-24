@@ -28,11 +28,7 @@ jobs:
       - name: Upload release
         run: |
           set -x
-          assets=()
-          for asset in ./dist/*.zip; do
-            assets+=("-a" "$asset")
-          done
-          gh release create -d "${assets[@]}" -t "$RELEASE_VERSION" "$RELEASE_VERSION"
+          gh release create -t "$RELEASE_VERSION" "$RELEASE_VERSION" ./dist/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
