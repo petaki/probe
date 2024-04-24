@@ -32,7 +32,7 @@ jobs:
           for asset in ./dist/*.zip; do
             assets+=("-a" "$asset")
           done
-          hub release create -d "${assets[@]}" -m "$RELEASE_VERSION" "$RELEASE_VERSION"
+          gh release create -d "${assets[@]}" -t "$RELEASE_VERSION"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
