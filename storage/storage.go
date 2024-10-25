@@ -162,6 +162,10 @@ func (s *Storage) saveDataLog(m interface{}) error {
 		err = conn.Send(
 			"HSET", key, s.field(&now), value.Used,
 		)
+	case model.Process:
+		err = conn.Send(
+			"HSET", key, s.field(&now), fmt.Sprintf("%f:%f", value.UsedCPU, value.UsedMemory),
+		)
 	}
 	if err != nil {
 		return err
@@ -194,6 +198,8 @@ func (s *Storage) saveAlarm(m interface{}) error {
 		callAlarm = s.Config.AlarmMemoryPercent > 0 && value.Used >= s.Config.AlarmMemoryPercent
 	case model.Disk:
 		callAlarm = s.Config.AlarmDiskPercent > 0 && value.Used >= s.Config.AlarmDiskPercent
+	case model.Process:
+		return nil
 	default:
 		return ErrUnknownModelType
 	}
@@ -396,6 +402,8 @@ func (s *Storage) printValue(m interface{}) error {
 		fmt.Printf("  📦 Memory: %.2f%%\n", value.Used)
 	case model.Disk:
 		fmt.Printf("  💾 Disk:%s: %.2f%%\n", value.Path, value.Used)
+	case model.Process:
+		fmt.Printf("  🚀 Process:%s: CPU: %.2f%%  Memory: %.2f%%\n", value.Name, value.UsedCPU, value.UsedMemory)
 	default:
 		return ErrUnknownModelType
 	}
@@ -451,6 +459,8 @@ func (s *Storage) key(m interface{}) (string, error) {
 		encodedPath := base64.StdEncoding.EncodeToString([]byte(value.Path))
 
 		return fmt.Sprintf("%sdisk:%s:%s", s.Config.RedisKeyPrefix, s.timestamp(), encodedPath), nil
+	case model.Process:
+		return fmt.Sprintf("%sprocess:%s:%s", s.Config.RedisKeyPrefix, s.timestamp(), value.Name), nil
 	default:
 		return "", ErrUnknownModelType
 	}
