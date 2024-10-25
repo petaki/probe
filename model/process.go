@@ -1,6 +1,6 @@
 package model
 
-// Process type.
+// Process model.
 type Process struct {
 	PID        int32
 	Name       string
