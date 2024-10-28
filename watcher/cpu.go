@@ -2,7 +2,6 @@ package watcher
 
 import (
 	"log"
-	"time"
 
 	"github.com/petaki/probe/model"
 	"github.com/petaki/probe/storage"
@@ -14,7 +13,7 @@ type CPU struct{}
 
 // Watch function.
 func (CPU) Watch(s *storage.Storage, index int, channel chan int) {
-	cpuPercent, err := cpu.Percent(3*time.Second, false)
+	cpuPercent, err := cpu.Percent(0, false)
 	if err != nil {
 		log.Fatal(err)
 	}
