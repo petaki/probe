@@ -20,7 +20,8 @@ func (Process) Watch(s *storage.Storage, index int, channel chan int) {
 		log.Fatal(err)
 	}
 
-	var processModels []model.Process
+	var processCPUModels []model.ProcessCPU
+	var processMemoryModels []model.ProcessMemory
 
 	for _, p := range processes {
 		name, err := p.Name()
@@ -38,21 +39,36 @@ func (Process) Watch(s *storage.Storage, index int, channel chan int) {
 			usedMemory = 0
 		}
 
-		processModels = append(processModels, model.Process{
-			PID:        p.Pid,
-			Name:       name,
-			UsedCPU:    usedCPU,
-			UsedMemory: usedMemory,
+		processCPUModels = append(processCPUModels, model.ProcessCPU{
+			PID:  p.Pid,
+			Name: name,
+			Used: usedCPU,
+		})
+
+		processMemoryModels = append(processMemoryModels, model.ProcessMemory{
+			PID:  p.Pid,
+			Name: name,
+			Used: usedMemory,
 		})
 	}
 
-	slices.SortStableFunc(processModels, func(a, b model.Process) int {
-		return cmp.Compare(b.UsedCPU, a.UsedCPU)
+	slices.SortStableFunc(processCPUModels, func(a, b model.ProcessCPU) int {
+		return cmp.Compare(b.Used, a.Used)
 	})
 
-	processModels = processModels[:3]
+	slices.SortStableFunc(processMemoryModels, func(a, b model.ProcessMemory) int {
+		return cmp.Compare(b.Used, a.Used)
+	})
 
-	err = s.Save(processModels)
+	processCPUModels = processCPUModels[:3]
+	processMemoryModels = processMemoryModels[:3]
+
+	err = s.Save(processCPUModels)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = s.Save(processMemoryModels)
 	if err != nil {
 		log.Fatal(err)
 	}
