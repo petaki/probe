@@ -162,9 +162,15 @@ func (s *Storage) saveDataLog(m interface{}) error {
 		err = conn.Send(
 			"HSET", key, s.field(&now), value.Used,
 		)
-	case model.Process:
+	case []model.Process:
+		var logValue []string
+
+		for _, p := range value {
+			logValue = append(logValue, fmt.Sprintf("%s:%f:%f", p.Name, p.UsedCPU, p.UsedMemory))
+		}
+
 		err = conn.Send(
-			"HSET", key, s.field(&now), fmt.Sprintf("%f:%f", value.UsedCPU, value.UsedMemory),
+			"HSET", key, s.field(&now), strings.Join(logValue, "|"),
 		)
 	}
 	if err != nil {
@@ -198,7 +204,7 @@ func (s *Storage) saveAlarm(m interface{}) error {
 		callAlarm = s.Config.AlarmMemoryPercent > 0 && value.Used >= s.Config.AlarmMemoryPercent
 	case model.Disk:
 		callAlarm = s.Config.AlarmDiskPercent > 0 && value.Used >= s.Config.AlarmDiskPercent
-	case model.Process:
+	case []model.Process:
 		return nil
 	default:
 		return ErrUnknownModelType
@@ -398,17 +404,21 @@ func (s *Storage) printValue(m interface{}) error {
 	switch value := m.(type) {
 	case model.CPU:
 		fmt.Printf("  ⚡ CPU: %.2f%%\n", value.Used)
+		fmt.Println()
 	case model.Memory:
 		fmt.Printf("  📦 Memory: %.2f%%\n", value.Used)
+		fmt.Println()
 	case model.Disk:
 		fmt.Printf("  💾 Disk:%s: %.2f%%\n", value.Path, value.Used)
-	case model.Process:
-		fmt.Printf("  🚀 Process:%s: CPU: %.2f%%  Memory: %.2f%%\n", value.Name, value.UsedCPU, value.UsedMemory)
+		fmt.Println()
+	case []model.Process:
+		for _, p := range value {
+			fmt.Printf("  🚀 Process:[%d]%s: CPU: %.2f%%  Memory: %.2f%%\n", p.PID, p.Name, p.UsedCPU, p.UsedMemory)
+			fmt.Println()
+		}
 	default:
 		return ErrUnknownModelType
 	}
-
-	fmt.Println()
 
 	return nil
 }
@@ -459,8 +469,8 @@ func (s *Storage) key(m interface{}) (string, error) {
 		encodedPath := base64.StdEncoding.EncodeToString([]byte(value.Path))
 
 		return fmt.Sprintf("%sdisk:%s:%s", s.Config.RedisKeyPrefix, s.timestamp(), encodedPath), nil
-	case model.Process:
-		return fmt.Sprintf("%sprocess:%s:%s", s.Config.RedisKeyPrefix, s.timestamp(), value.Name), nil
+	case []model.Process:
+		return fmt.Sprintf("%sprocess:%s", s.Config.RedisKeyPrefix, s.timestamp()), nil
 	default:
 		return "", ErrUnknownModelType
 	}

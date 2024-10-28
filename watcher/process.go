@@ -52,11 +52,9 @@ func (Process) Watch(s *storage.Storage, index int, channel chan int) {
 
 	processModels = processModels[:3]
 
-	for _, processModel := range processModels {
-		err := s.Save(processModel)
-		if err != nil {
-			log.Fatal(err)
-		}
+	err = s.Save(processModels)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	channel <- index
