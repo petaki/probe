@@ -182,6 +182,10 @@ func (s *Storage) saveDataLog(m interface{}) error {
 		err = conn.Send(
 			"HSET", key, s.field(&now), strings.Join(v, "|"),
 		)
+	case model.Load:
+		err = conn.Send(
+			"HSET", key, s.field(&now), fmt.Sprintf("%f:%f:%f", value.Load1, value.Load5, value.Load15),
+		)
 	}
 	if err != nil {
 		return err
@@ -433,6 +437,9 @@ func (s *Storage) printValue(m interface{}) error {
 			fmt.Printf("  🚀 Process By Memory:[%d]%s: %.2f%%\n", p.PID, p.Name, p.Used)
 			fmt.Println()
 		}
+	case model.Load:
+		fmt.Printf("  ⚡ Load1: %.2f Load5: %.2f Load15: %.2f\n", value.Load1, value.Load5, value.Load15)
+		fmt.Println()
 	default:
 		return ErrUnknownModelType
 	}
@@ -490,6 +497,8 @@ func (s *Storage) key(m interface{}) (string, error) {
 		return fmt.Sprintf("%sprocess:cpu:%s", s.Config.RedisKeyPrefix, s.timestamp()), nil
 	case []model.ProcessMemory:
 		return fmt.Sprintf("%sprocess:memory:%s", s.Config.RedisKeyPrefix, s.timestamp()), nil
+	case model.Load:
+		return fmt.Sprintf("%sload:%s", s.Config.RedisKeyPrefix, s.timestamp()), nil
 	default:
 		return "", ErrUnknownModelType
 	}
