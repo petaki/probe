@@ -438,7 +438,7 @@ func (s *Storage) printValue(m interface{}) error {
 			fmt.Println()
 		}
 	case model.Load:
-		fmt.Printf("  ⚡ Load1: %.2f Load5: %.2f Load15: %.2f\n", value.Load1, value.Load5, value.Load15)
+		fmt.Printf("  ✨ Load1: %.2f Load5: %.2f Load15: %.2f\n", value.Load1, value.Load5, value.Load15)
 		fmt.Println()
 	default:
 		return ErrUnknownModelType
