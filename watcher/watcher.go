@@ -16,6 +16,7 @@ var watchers = []Watcher{
 	Disk{},
 	Memory{},
 	Process{},
+	Load{},
 }
 
 // Watch function.
