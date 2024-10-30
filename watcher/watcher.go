@@ -13,10 +13,10 @@ type Watcher interface {
 
 var watchers = []Watcher{
 	CPU{},
-	Disk{},
 	Memory{},
 	Process{},
 	Load{},
+	Disk{},
 }
 
 // Watch function.
