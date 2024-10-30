@@ -222,6 +222,8 @@ func (s *Storage) saveAlarm(m interface{}) error {
 		return nil
 	case []model.ProcessMemory:
 		return nil
+	case model.Load:
+		return nil
 	default:
 		return ErrUnknownModelType
 	}
