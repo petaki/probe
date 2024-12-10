@@ -416,7 +416,7 @@ func (s *Storage) callAlarm(m interface{}) error {
 	case model.Load:
 		name = "Load"
 		alarm = s.Config.AlarmLoadValue
-		used = fmt.Sprintf("1: %.2f, 5: %.2f, 15: %.2f", value.Load1, value.Load5, value.Load15)
+		used = fmt.Sprintf("\"%.2f,%.2f,%.2f\"", value.Load1, value.Load5, value.Load15)
 		link = fmt.Sprintf("/load?probe=%s", probe)
 	default:
 		return ErrUnknownModelType
