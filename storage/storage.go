@@ -97,6 +97,7 @@ func (s *Storage) SaveAlarmConfig() error {
 		CPU:    s.Config.AlarmCPUPercent,
 		Memory: s.Config.AlarmMemoryPercent,
 		Disk:   s.Config.AlarmDiskPercent,
+		Load:   s.Config.AlarmLoadValue,
 	}
 
 	_, err := conn.Do(
@@ -223,7 +224,7 @@ func (s *Storage) saveAlarm(m interface{}) error {
 	case []model.ProcessMemory:
 		return nil
 	case model.Load:
-		return nil
+		callAlarm = s.Config.AlarmLoadValue > 0 && (value.Load1 >= s.Config.AlarmLoadValue || value.Load5 >= s.Config.AlarmLoadValue || value.Load15 >= s.Config.AlarmLoadValue)
 	default:
 		return ErrUnknownModelType
 	}
