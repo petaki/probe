@@ -547,6 +547,8 @@ func (s *Storage) alarmKey(m interface{}) (string, error) {
 		encodedPath := base64.StdEncoding.EncodeToString([]byte(value.Path))
 
 		return fmt.Sprintf("%salarm:disk:%s", s.Config.RedisKeyPrefix, encodedPath), nil
+	case model.Load:
+		return fmt.Sprintf("%salarm:load", s.Config.RedisKeyPrefix), nil
 	}
 
 	return "", ErrUnknownModelType
