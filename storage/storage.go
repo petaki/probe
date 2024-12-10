@@ -299,23 +299,54 @@ func (s *Storage) filterAlarm(m interface{}) error {
 			fields = append(fields, s.field(&current))
 		}
 
-		values, err := redis.Float64s(conn.Do("HMGET", redis.Args{}.Add(key).AddFlat(fields)...))
+		values, err := redis.Strings(conn.Do("HMGET", redis.Args{}.Add(key).AddFlat(fields)...))
 		if err != nil {
 			return err
 		}
 
-		for _, value := range values {
+		for _, raw := range values {
 			switch m.(type) {
 			case model.CPU:
+				value, err := strconv.ParseFloat(raw, 64)
+				if err != nil {
+					return err
+				}
+
 				if value < s.Config.AlarmCPUPercent {
 					return nil
 				}
 			case model.Memory:
+				value, err := strconv.ParseFloat(raw, 64)
+				if err != nil {
+					return err
+				}
+
 				if value < s.Config.AlarmMemoryPercent {
 					return nil
 				}
 			case model.Disk:
+				value, err := strconv.ParseFloat(raw, 64)
+				if err != nil {
+					return err
+				}
+
 				if value < s.Config.AlarmDiskPercent {
+					return nil
+				}
+			case model.Load:
+				value := true
+				segments := strings.SplitN(raw, ":", 2)
+
+				for _, segment := range segments {
+					segmentValue, err := strconv.ParseFloat(segment, 64)
+					if err != nil {
+						return err
+					}
+
+					value = value && segmentValue < s.Config.AlarmLoadValue
+				}
+
+				if value {
 					return nil
 				}
 			default:
