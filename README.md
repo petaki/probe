@@ -160,8 +160,8 @@ PROBE_ALARM_WEBHOOK_HEADER='{"Authorization": "Bearer TOKEN", "Accept": "applica
 
 - `%p` - Probe
 - `%n` - Name of the watcher
-- `%a` - Alarm percent
-- `%u` - Used percent
+- `%a` - Alarm percent or value
+- `%u` - Used percent or value
 - `%t` - Timestamp in `RFC3339` format
 - `%x` - Timestamp in `Unix` format
 - `%l` - Satellite link (relative)
