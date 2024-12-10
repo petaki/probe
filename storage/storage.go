@@ -415,7 +415,7 @@ func (s *Storage) callAlarm(m interface{}) error {
 		link = fmt.Sprintf("/disk?probe=%s&path=%s", probe, value.Path)
 	case model.Load:
 		name = "Load"
-		alarm = s.Config.AlarmMemoryPercent
+		alarm = s.Config.AlarmLoadValue
 		used = fmt.Sprintf("1: %.2f, 5: %.2f, 15: %.2f", value.Load1, value.Load5, value.Load15)
 		link = fmt.Sprintf("/load?probe=%s", probe)
 	default:
