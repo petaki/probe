@@ -138,6 +138,14 @@ PROBE_ALARM_MEMORY_PERCENT=50
 PROBE_ALARM_DISK_PERCENT=80
 ```
 
+### Alarm Load Value
+
+- `0` - Disabled
+
+```
+PROBE_ALARM_LOAD_VALUE=1.0
+```
+
 ### Alarm Webhook Method
 
 ```

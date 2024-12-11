@@ -332,6 +332,10 @@ func (s *Storage) filterAlarm(m interface{}) error {
 				value := true
 				segments := strings.SplitN(raw, ":", 3)
 
+				if len(segments) != 3 {
+					continue
+				}
+
 				for _, segment := range segments {
 					segmentValue, err := strconv.ParseFloat(segment, 64)
 					if err != nil {
