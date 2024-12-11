@@ -97,6 +97,7 @@ func (s *Storage) SaveAlarmConfig() error {
 		CPU:    s.Config.AlarmCPUPercent,
 		Memory: s.Config.AlarmMemoryPercent,
 		Disk:   s.Config.AlarmDiskPercent,
+		Load:   s.Config.AlarmLoadValue,
 	}
 
 	_, err := conn.Do(
@@ -223,7 +224,7 @@ func (s *Storage) saveAlarm(m interface{}) error {
 	case []model.ProcessMemory:
 		return nil
 	case model.Load:
-		return nil
+		callAlarm = s.Config.AlarmLoadValue > 0 && (value.Load1 >= s.Config.AlarmLoadValue || value.Load5 >= s.Config.AlarmLoadValue || value.Load15 >= s.Config.AlarmLoadValue)
 	default:
 		return ErrUnknownModelType
 	}
@@ -298,28 +299,58 @@ func (s *Storage) filterAlarm(m interface{}) error {
 			fields = append(fields, s.field(&current))
 		}
 
-		values, err := redis.Float64s(conn.Do("HMGET", redis.Args{}.Add(key).AddFlat(fields)...))
-		if err != nil {
-			return err
-		}
-
-		for _, value := range values {
-			switch m.(type) {
-			case model.CPU:
-				if value < s.Config.AlarmCPUPercent {
-					return nil
-				}
-			case model.Memory:
-				if value < s.Config.AlarmMemoryPercent {
-					return nil
-				}
-			case model.Disk:
-				if value < s.Config.AlarmDiskPercent {
-					return nil
-				}
-			default:
-				return ErrUnknownModelType
+		switch m.(type) {
+		case model.CPU, model.Memory, model.Disk:
+			values, err := redis.Float64s(conn.Do("HMGET", redis.Args{}.Add(key).AddFlat(fields)...))
+			if err != nil {
+				return err
 			}
+
+			for _, value := range values {
+				switch m.(type) {
+				case model.CPU:
+					if value < s.Config.AlarmCPUPercent {
+						return nil
+					}
+				case model.Memory:
+					if value < s.Config.AlarmMemoryPercent {
+						return nil
+					}
+				case model.Disk:
+					if value < s.Config.AlarmDiskPercent {
+						return nil
+					}
+				}
+			}
+		case model.Load:
+			values, err := redis.Strings(conn.Do("HMGET", redis.Args{}.Add(key).AddFlat(fields)...))
+			if err != nil {
+				return err
+			}
+
+			for _, raw := range values {
+				value := true
+				segments := strings.SplitN(raw, ":", 3)
+
+				if len(segments) != 3 {
+					continue
+				}
+
+				for _, segment := range segments {
+					segmentValue, err := strconv.ParseFloat(segment, 64)
+					if err != nil {
+						return err
+					}
+
+					value = value && segmentValue < s.Config.AlarmLoadValue
+				}
+
+				if value {
+					return nil
+				}
+			}
+		default:
+			return ErrUnknownModelType
 		}
 	}
 
@@ -361,7 +392,7 @@ func (s *Storage) callAlarm(m interface{}) error {
 	probe := strings.ReplaceAll(s.Config.RedisKeyPrefix, ":", "")
 
 	var name string
-	var used float64
+	var used string
 	var alarm float64
 	var link string
 
@@ -369,18 +400,23 @@ func (s *Storage) callAlarm(m interface{}) error {
 	case model.CPU:
 		name = "CPU"
 		alarm = s.Config.AlarmCPUPercent
-		used = value.Used
+		used = fmt.Sprintf("%.2f", value.Used)
 		link = fmt.Sprintf("/cpu?probe=%s", probe)
 	case model.Memory:
 		name = "Memory"
 		alarm = s.Config.AlarmMemoryPercent
-		used = value.Used
+		used = fmt.Sprintf("%.2f", value.Used)
 		link = fmt.Sprintf("/memory?probe=%s", probe)
 	case model.Disk:
 		name = fmt.Sprintf("Disk:%s", value.Path)
 		alarm = s.Config.AlarmDiskPercent
-		used = value.Used
+		used = fmt.Sprintf("%.2f", value.Used)
 		link = fmt.Sprintf("/disk?probe=%s&path=%s", probe, value.Path)
+	case model.Load:
+		name = "Load"
+		alarm = s.Config.AlarmLoadValue
+		used = fmt.Sprintf("\"%.2f,%.2f,%.2f\"", value.Load1, value.Load5, value.Load15)
+		link = fmt.Sprintf("/load?probe=%s", probe)
 	default:
 		return ErrUnknownModelType
 	}
@@ -390,7 +426,7 @@ func (s *Storage) callAlarm(m interface{}) error {
 	body := strings.ReplaceAll(s.Config.AlarmWebhookBody, "%p", probe)
 	body = strings.ReplaceAll(body, "%n", name)
 	body = strings.ReplaceAll(body, "%a", fmt.Sprintf("%.2f", alarm))
-	body = strings.ReplaceAll(body, "%u", fmt.Sprintf("%.2f", used))
+	body = strings.ReplaceAll(body, "%u", used)
 	body = strings.ReplaceAll(body, "%t", now.Format(time.RFC3339))
 	body = strings.ReplaceAll(body, "%x", strconv.FormatInt(now.Unix(), 10))
 	body = strings.ReplaceAll(body, "%l", link)
@@ -547,6 +583,8 @@ func (s *Storage) alarmKey(m interface{}) (string, error) {
 		encodedPath := base64.StdEncoding.EncodeToString([]byte(value.Path))
 
 		return fmt.Sprintf("%salarm:disk:%s", s.Config.RedisKeyPrefix, encodedPath), nil
+	case model.Load:
+		return fmt.Sprintf("%salarm:load", s.Config.RedisKeyPrefix), nil
 	}
 
 	return "", ErrUnknownModelType

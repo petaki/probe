@@ -18,6 +18,7 @@ const (
 	envAlarmCPUPercent    = "PROBE_ALARM_CPU_PERCENT"
 	envAlarmMemoryPercent = "PROBE_ALARM_MEMORY_PERCENT"
 	envAlarmDiskPercent   = "PROBE_ALARM_DISK_PERCENT"
+	envAlarmLoadValue     = "PROBE_ALARM_LOAD_VALUE"
 	envAlarmWebhookMethod = "PROBE_ALARM_WEBHOOK_METHOD"
 	envAlarmWebhookURL    = "PROBE_ALARM_WEBHOOK_URL"
 	envAlarmWebhookHeader = "PROBE_ALARM_WEBHOOK_HEADER"
@@ -37,6 +38,7 @@ var envKeys = []string{
 	envAlarmCPUPercent,
 	envAlarmMemoryPercent,
 	envAlarmDiskPercent,
+	envAlarmLoadValue,
 	envAlarmWebhookMethod,
 	envAlarmWebhookURL,
 	envAlarmWebhookHeader,
@@ -57,6 +59,7 @@ type Config struct {
 	AlarmCPUPercent    float64
 	AlarmMemoryPercent float64
 	AlarmDiskPercent   float64
+	AlarmLoadValue     float64
 	AlarmWebhookMethod string
 	AlarmWebhookURL    string
 	AlarmWebhookHeader map[string]string
@@ -151,6 +154,17 @@ func (c *Config) parse(key string, value string) error {
 		}
 
 		c.AlarmDiskPercent = alarmDiskPercent
+	case envAlarmLoadValue:
+		alarmLoadValue, err := strconv.ParseFloat(value, 64)
+		if err != nil {
+			return err
+		}
+
+		if alarmLoadValue < 0 {
+			return ErrInvalidValue
+		}
+
+		c.AlarmLoadValue = alarmLoadValue
 	case envAlarmWebhookMethod:
 		c.AlarmWebhookMethod = value
 	case envAlarmWebhookURL:

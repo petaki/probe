@@ -61,6 +61,10 @@ func TestLoadAndParse(t *testing.T) {
 		t.Errorf("Expected alarm disk percent 80, but got %v", config.AlarmDiskPercent)
 	}
 
+	if config.AlarmLoadValue != 1.0 {
+		t.Errorf("Expected alarm load value 1.0, but got %v", config.AlarmLoadValue)
+	}
+
 	if config.AlarmWebhookMethod != "POST" {
 		t.Errorf("Expected alarm webhook method POST, but got %v", config.RedisKeyPrefix)
 	}

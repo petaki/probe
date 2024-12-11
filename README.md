@@ -138,6 +138,14 @@ PROBE_ALARM_MEMORY_PERCENT=50
 PROBE_ALARM_DISK_PERCENT=80
 ```
 
+### Alarm Load Value
+
+- `0` - Disabled
+
+```
+PROBE_ALARM_LOAD_VALUE=1.0
+```
+
 ### Alarm Webhook Method
 
 ```
@@ -160,8 +168,8 @@ PROBE_ALARM_WEBHOOK_HEADER='{"Authorization": "Bearer TOKEN", "Accept": "applica
 
 - `%p` - Probe
 - `%n` - Name of the watcher
-- `%a` - Alarm percent
-- `%u` - Used percent
+- `%a` - Alarm percent or value
+- `%u` - Used percent or value
 - `%t` - Timestamp in `RFC3339` format
 - `%x` - Timestamp in `Unix` format
 - `%l` - Satellite link (relative)

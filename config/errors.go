@@ -8,4 +8,7 @@ var (
 
 	// ErrInvalidPercent error.
 	ErrInvalidPercent = errors.New("config: invalid percent")
+
+	// ErrInvalidValue error.
+	ErrInvalidValue = errors.New("config: invalid value")
 )
