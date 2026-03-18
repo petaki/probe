@@ -19,6 +19,19 @@ A small GO based agent for monitoring CPU, Memory and Disk usage.
 [![Build Status](https://github.com/petaki/probe/workflows/tests/badge.svg)](https://github.com/petaki/probe/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](LICENSE.md)
 
+## Features
+
+- CPU usage monitoring
+- Memory usage monitoring
+- Disk usage monitoring
+- Process CPU and memory monitoring
+- System load monitoring
+- Log file tail watching
+- Data logging to Redis
+- Alarm notifications via webhooks
+- Alarm filtering with wait and sleep intervals
+- Console output mode
+
 ## Getting Started
 
 Before you start, you need to install the prerequisites.
