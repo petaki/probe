@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/petaki/probe/config"
 	"github.com/petaki/probe/model"
 	"github.com/petaki/probe/storage"
 )
@@ -20,7 +21,7 @@ func (Log) Watch(s *storage.Storage, index int, channel chan int) {
 	}
 
 	for _, filePath := range s.Config.LogTailFiles {
-		content, err := tailFile(filePath, s.Config.LogTailLines, s.Config.LogTailBufferSize)
+		content, err := tailFile(filePath, s.Config)
 		if err != nil {
 			log.Println(err)
 
@@ -41,11 +42,12 @@ func (Log) Watch(s *storage.Storage, index int, channel chan int) {
 	channel <- index
 }
 
-func tailFile(path string, lines int, bufferSize int) (string, error) {
+func tailFile(path string, c *config.Config) (string, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return "", err
 	}
+
 	defer file.Close()
 
 	stat, err := file.Stat()
@@ -60,7 +62,7 @@ func tailFile(path string, lines int, bufferSize int) (string, error) {
 
 	newlines := 0
 	cursor := size
-	buf := make([]byte, bufferSize)
+	buf := make([]byte, c.LogTailBufferSize)
 
 	for cursor > 0 {
 		chunkSize := min(int64(len(buf)), cursor)
@@ -76,29 +78,27 @@ func tailFile(path string, lines int, bufferSize int) (string, error) {
 				continue
 			}
 
-			if cursor+int64(i)+1 == size && newlines == 0 {
+			position := cursor + int64(i) + 1
+
+			if position == size && newlines == 0 {
 				continue
 			}
 
 			newlines++
 
-			if newlines >= lines {
-				start := cursor + int64(i) + 1
-				content := make([]byte, size-start)
-
-				_, err = file.ReadAt(content, start)
-				if err != nil {
-					return "", err
-				}
-
-				return strings.TrimRight(string(content), "\n"), nil
+			if newlines >= c.LogTailLines {
+				return readTail(file, position, size)
 			}
 		}
 	}
 
-	content := make([]byte, size)
+	return readTail(file, 0, size)
+}
 
-	_, err = file.ReadAt(content, 0)
+func readTail(file *os.File, start, end int64) (string, error) {
+	content := make([]byte, end-start)
+
+	_, err := file.ReadAt(content, start)
 	if err != nil {
 		return "", err
 	}
