@@ -91,10 +91,6 @@ func (s *Storage) saveDataLog(m any) error {
 		err = conn.Send(
 			"HSET", key, s.field(&now), value.Used,
 		)
-	case model.Disk:
-		err = conn.Send(
-			"HSET", key, s.field(&now), value.Used,
-		)
 	case []model.ProcessCPU:
 		var v []string
 
@@ -118,6 +114,10 @@ func (s *Storage) saveDataLog(m any) error {
 	case model.Load:
 		err = conn.Send(
 			"HSET", key, s.field(&now), fmt.Sprintf("%f:%f:%f", value.Load1, value.Load5, value.Load15),
+		)
+	case model.Disk:
+		err = conn.Send(
+			"HSET", key, s.field(&now), value.Used,
 		)
 	case model.Log:
 		err = conn.Send(
@@ -150,16 +150,16 @@ func (s *Storage) saveAlarm(m any) error {
 		callAlarm = s.Config.AlarmCPUPercent > 0 && value.Used >= s.Config.AlarmCPUPercent
 	case model.Memory:
 		callAlarm = s.Config.AlarmMemoryPercent > 0 && value.Used >= s.Config.AlarmMemoryPercent
-	case model.Disk:
-		callAlarm = s.Config.AlarmDiskPercent > 0 && value.Used >= s.Config.AlarmDiskPercent
 	case []model.ProcessCPU:
 		return nil
 	case []model.ProcessMemory:
 		return nil
-	case model.Log:
-		return nil
 	case model.Load:
 		callAlarm = s.Config.AlarmLoadValue > 0 && (value.Load1 >= s.Config.AlarmLoadValue || value.Load5 >= s.Config.AlarmLoadValue || value.Load15 >= s.Config.AlarmLoadValue)
+	case model.Disk:
+		callAlarm = s.Config.AlarmDiskPercent > 0 && value.Used >= s.Config.AlarmDiskPercent
+	case model.Log:
+		return nil
 	default:
 		return ErrUnknownModelType
 	}
@@ -319,16 +319,16 @@ func (s *Storage) key(m any) (string, error) {
 		return fmt.Sprintf("%scpu:%s", s.Config.RedisKeyPrefix, s.timestamp()), nil
 	case model.Memory:
 		return fmt.Sprintf("%smemory:%s", s.Config.RedisKeyPrefix, s.timestamp()), nil
-	case model.Disk:
-		encodedPath := base64.StdEncoding.EncodeToString([]byte(value.Path))
-
-		return fmt.Sprintf("%sdisk:%s:%s", s.Config.RedisKeyPrefix, s.timestamp(), encodedPath), nil
 	case []model.ProcessCPU:
 		return fmt.Sprintf("%sprocess:cpu:%s", s.Config.RedisKeyPrefix, s.timestamp()), nil
 	case []model.ProcessMemory:
 		return fmt.Sprintf("%sprocess:memory:%s", s.Config.RedisKeyPrefix, s.timestamp()), nil
 	case model.Load:
 		return fmt.Sprintf("%sload:%s", s.Config.RedisKeyPrefix, s.timestamp()), nil
+	case model.Disk:
+		encodedPath := base64.StdEncoding.EncodeToString([]byte(value.Path))
+
+		return fmt.Sprintf("%sdisk:%s:%s", s.Config.RedisKeyPrefix, s.timestamp(), encodedPath), nil
 	case model.Log:
 		encodedPath := base64.StdEncoding.EncodeToString([]byte(value.Path))
 
