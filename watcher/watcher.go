@@ -28,9 +28,9 @@ func Watch(s *storage.Storage) {
 	}
 
 	for i := range channel {
-		go func(index int) {
+		go func() {
 			time.Sleep(60 * time.Second)
-			watchers[index].Watch(s, index, channel)
-		}(i)
+			watchers[i].Watch(s, i, channel)
+		}()
 	}
 }
