@@ -152,6 +152,12 @@ PROBE_LOG_TAIL_FILES=/var/log/syslog,/var/log/auth.log
 PROBE_LOG_TAIL_LINES=10
 ```
 
+#### Log Tail Buffer Size (in bytes)
+
+```
+PROBE_LOG_TAIL_BUFFER_SIZE=4096
+```
+
 ---
 
 ### Alarm

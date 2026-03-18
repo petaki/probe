@@ -120,4 +120,8 @@ func TestLoadAndParse(t *testing.T) {
 	if config.LogTailLines != 10 {
 		t.Errorf("Expected log tail lines 10, but got %v", config.LogTailLines)
 	}
+
+	if config.LogTailBufferSize != 4096 {
+		t.Errorf("Expected log tail buffer size 4096, but got %v", config.LogTailBufferSize)
+	}
 }

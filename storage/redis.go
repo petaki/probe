@@ -226,25 +226,25 @@ func (s *Storage) filterAlarm(m any) error {
 
 		switch m.(type) {
 		case model.CPU, model.Memory, model.Disk:
+			var threshold float64
+
+			switch m.(type) {
+			case model.CPU:
+				threshold = s.Config.AlarmCPUPercent
+			case model.Memory:
+				threshold = s.Config.AlarmMemoryPercent
+			case model.Disk:
+				threshold = s.Config.AlarmDiskPercent
+			}
+
 			values, err := redis.Float64s(conn.Do("HMGET", redis.Args{}.Add(key).AddFlat(fields)...))
 			if err != nil {
 				return err
 			}
 
 			for _, value := range values {
-				switch m.(type) {
-				case model.CPU:
-					if value < s.Config.AlarmCPUPercent {
-						return nil
-					}
-				case model.Memory:
-					if value < s.Config.AlarmMemoryPercent {
-						return nil
-					}
-				case model.Disk:
-					if value < s.Config.AlarmDiskPercent {
-						return nil
-					}
+				if value < threshold {
+					return nil
 				}
 			}
 		case model.Load:
@@ -333,9 +333,9 @@ func (s *Storage) key(m any) (string, error) {
 		encodedPath := base64.StdEncoding.EncodeToString([]byte(value.Path))
 
 		return fmt.Sprintf("%slog:%s:%s", s.Config.RedisKeyPrefix, s.timestamp(), encodedPath), nil
-	default:
-		return "", ErrUnknownModelType
 	}
+
+	return "", ErrUnknownModelType
 }
 
 func (s *Storage) timestamp() string {
@@ -375,12 +375,12 @@ func (s *Storage) alarmKey(m any) (string, error) {
 		return fmt.Sprintf("%salarm:cpu", s.Config.RedisKeyPrefix), nil
 	case model.Memory:
 		return fmt.Sprintf("%salarm:memory", s.Config.RedisKeyPrefix), nil
+	case model.Load:
+		return fmt.Sprintf("%salarm:load", s.Config.RedisKeyPrefix), nil
 	case model.Disk:
 		encodedPath := base64.StdEncoding.EncodeToString([]byte(value.Path))
 
 		return fmt.Sprintf("%salarm:disk:%s", s.Config.RedisKeyPrefix, encodedPath), nil
-	case model.Load:
-		return fmt.Sprintf("%salarm:load", s.Config.RedisKeyPrefix), nil
 	}
 
 	return "", ErrUnknownModelType
