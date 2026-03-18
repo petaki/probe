@@ -23,9 +23,9 @@ A lightweight Go agent for monitoring system resources and log files.
 
 - **CPU** - overall CPU usage percentage
 - **Memory** - overall memory usage percentage
-- **Disk** - per-partition disk usage percentage (with ignore patterns)
 - **Process** - per-process CPU and memory usage
 - **Load** - system load averages (1, 5, 15 min)
+- **Disk** - per-partition disk usage percentage (with ignore patterns)
 - **Log Tail** - tail the last N lines of specified log files
 - **Data Logging** - persist collected metrics to Redis with configurable TTL
 - **Alarms** - webhook notifications when thresholds are exceeded
