@@ -119,6 +119,10 @@ func (s *Storage) saveDataLog(m any) error {
 		err = conn.Send(
 			"HSET", key, s.field(&now), fmt.Sprintf("%f:%f:%f", value.Load1, value.Load5, value.Load15),
 		)
+	case model.Log:
+		err = conn.Send(
+			"HSET", key, s.field(&now), value.Content,
+		)
 	}
 	if err != nil {
 		return err
@@ -151,6 +155,8 @@ func (s *Storage) saveAlarm(m any) error {
 	case []model.ProcessCPU:
 		return nil
 	case []model.ProcessMemory:
+		return nil
+	case model.Log:
 		return nil
 	case model.Load:
 		callAlarm = s.Config.AlarmLoadValue > 0 && (value.Load1 >= s.Config.AlarmLoadValue || value.Load5 >= s.Config.AlarmLoadValue || value.Load15 >= s.Config.AlarmLoadValue)
@@ -323,6 +329,10 @@ func (s *Storage) key(m any) (string, error) {
 		return fmt.Sprintf("%sprocess:memory:%s", s.Config.RedisKeyPrefix, s.timestamp()), nil
 	case model.Load:
 		return fmt.Sprintf("%sload:%s", s.Config.RedisKeyPrefix, s.timestamp()), nil
+	case model.Log:
+		encodedPath := base64.StdEncoding.EncodeToString([]byte(value.Path))
+
+		return fmt.Sprintf("%slog:%s:%s", s.Config.RedisKeyPrefix, s.timestamp(), encodedPath), nil
 	default:
 		return "", ErrUnknownModelType
 	}

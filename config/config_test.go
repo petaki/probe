@@ -100,4 +100,24 @@ func TestLoadAndParse(t *testing.T) {
 	if config.AlarmFilterSleep != 300 {
 		t.Errorf("Expected alarm filter sleep 300, but got %v", config.AlarmFilterSleep)
 	}
+
+	if config.LogTailEnabled {
+		t.Errorf("Expected log tail enabled false, but got %v", config.LogTailEnabled)
+	}
+
+	for _, value := range config.LogTailFiles {
+		if value == "/var/log/syslog" {
+			continue
+		}
+
+		if value == "/var/log/auth.log" {
+			continue
+		}
+
+		t.Errorf("Expected log tail files [/var/log/syslog /var/log/auth.log], but got %v", config.LogTailFiles)
+	}
+
+	if config.LogTailLines != 10 {
+		t.Errorf("Expected log tail lines 10, but got %v", config.LogTailLines)
+	}
 }
