@@ -10,9 +10,7 @@ import (
 	"github.com/petaki/probe/watcher"
 )
 
-var (
-	mainStorage = &storage.Storage{}
-)
+var mainStorage *storage.Storage
 
 func init() {
 	fmt.Println()
