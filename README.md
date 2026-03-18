@@ -1,6 +1,6 @@
 # Probe
 
-A small GO based agent for monitoring CPU, Memory and Disk usage.
+A lightweight Go agent for monitoring system resources and log files.
 
 ```
 
@@ -11,7 +11,7 @@ A small GO based agent for monitoring CPU, Memory and Disk usage.
   🚨 Alarm is armed.
 
   🤖 Probe is watching.
-  
+
 ```
 
 ## Badges
@@ -21,75 +21,74 @@ A small GO based agent for monitoring CPU, Memory and Disk usage.
 
 ## Features
 
-- CPU usage monitoring
-- Memory usage monitoring
-- Disk usage monitoring
-- Process CPU and memory monitoring
-- System load monitoring
-- Log file tail watching
-- Data logging to Redis
-- Alarm notifications via webhooks
-- Alarm filtering with wait and sleep intervals
-- Console output mode
+- **CPU** - overall CPU usage percentage
+- **Memory** - overall memory usage percentage
+- **Disk** - per-partition disk usage percentage (with ignore patterns)
+- **Process** - per-process CPU and memory usage
+- **Load** - system load averages (1, 5, 15 min)
+- **Log Tail** - tail the last N lines of specified log files
+- **Data Logging** - persist collected metrics to Redis with configurable TTL
+- **Alarms** - webhook notifications when thresholds are exceeded
+- **Alarm Filtering** - wait and sleep intervals to reduce alarm noise
+- **Console Mode** - print metrics to stdout when data logging is disabled
 
 ## Getting Started
 
-Before you start, you need to install the prerequisites.
+Follow the steps below to install and configure Probe.
 
 ### Prerequisites
 
-- Redis: `Version >= 5.0` for data logging
+- Redis: `Version >= 5.0` (optional, required for data logging and alarm filtering)
 
-### Install from binary
+### Install from Binary
 
-Downloads can be found at releases page on [GitHub](https://github.com/petaki/probe/releases).
+Download the latest release for your platform from the [GitHub Releases](https://github.com/petaki/probe/releases) page.
 
 ---
 
-### Install from source
+### Install from Source
 
-#### Prerequisites for building
+#### Prerequisites
 
-- GO: `Version >= 1.21`
+- Go: `Version >= 1.26`
 
-#### 1. Clone the repository:
+#### Steps
 
-```
+1. Clone the repository:
+
+```bash
 git clone git@github.com:petaki/probe.git
 ```
 
-#### 2. Open the folder:
+2. Build the binary:
 
-```
+```bash
 cd probe
-```
-
-#### 3. Build the Probe:
-
-```
 go build
 ```
 
-#### 4. Copy the example configuration:
+3. Copy and edit the configuration:
 
-```
+```bash
 cp .env.example .env
 ```
 
 ## Configuration
 
-The configuration is stored in the `.env` file.
+All configuration is done through environment variables in the `.env` file.
 
 ### General
 
 #### Disk Ignored
 
-Patterns to exclude disk partitions from monitoring:
+Comma-separated patterns to exclude disk partitions from monitoring:
 
-- `PATTERN*` - Prefix
-- `*PATTERN` - Suffix
-- `*PATTERN*` - Contains
-- `PATTERN` - Exact match
+| Pattern | Match Type |
+|---------|------------|
+| `PATTERN*` | Prefix |
+| `*PATTERN` | Suffix |
+| `*PATTERN*` | Contains |
+| `PATTERN` | Exact |
 
 ```
 PROBE_DISK_IGNORED=/dev,/var/lib/docker/*
@@ -115,7 +114,7 @@ PROBE_REDIS_KEY_PREFIX=probe:
 
 ### Data Log
 
-Requires Redis to be configured.
+Persists collected metrics to Redis. Requires Redis to be configured.
 
 #### Data Log Enabled
 
@@ -157,6 +156,8 @@ PROBE_LOG_TAIL_LINES=10
 
 ### Alarm
 
+Sends webhook notifications when a metric exceeds its threshold. Set a threshold to `0` to disable it.
+
 #### Alarm Enabled
 
 ```
@@ -165,15 +166,11 @@ PROBE_ALARM_ENABLED=false
 
 #### Alarm CPU Percent
 
-- `0` - Disabled
-
 ```
 PROBE_ALARM_CPU_PERCENT=30
 ```
 
 #### Alarm Memory Percent
-
-- `0` - Disabled
 
 ```
 PROBE_ALARM_MEMORY_PERCENT=50
@@ -181,15 +178,11 @@ PROBE_ALARM_MEMORY_PERCENT=50
 
 #### Alarm Disk Percent
 
-- `0` - Disabled
-
 ```
 PROBE_ALARM_DISK_PERCENT=80
 ```
 
 #### Alarm Load Value
-
-- `0` - Disabled
 
 ```
 PROBE_ALARM_LOAD_VALUE=1.0
@@ -219,13 +212,17 @@ PROBE_ALARM_WEBHOOK_HEADER='{"Authorization": "Bearer TOKEN", "Accept": "applica
 
 #### Alarm Webhook Body
 
-- `%p` - Probe
-- `%n` - Name of the watcher
-- `%a` - Alarm percent or value
-- `%u` - Used percent or value
-- `%t` - Timestamp in `RFC3339` format
-- `%x` - Timestamp in `Unix` format
-- `%l` - Satellite link (relative)
+The body supports the following placeholders:
+
+| Placeholder | Description |
+|-------------|-------------|
+| `%p` | Probe name |
+| `%n` | Watcher name |
+| `%a` | Alarm threshold |
+| `%u` | Current value |
+| `%t` | Timestamp (`RFC3339`) |
+| `%x` | Timestamp (`Unix`) |
+| `%l` | Satellite link (relative) |
 
 ```
 PROBE_ALARM_WEBHOOK_BODY='{"probe": "%p", "name": "%n", "alarm": %a, "used": %u, "timestamp_rfc3339": "%t", "timestamp_unix": %x, "link": "%l"}'
@@ -235,7 +232,7 @@ PROBE_ALARM_WEBHOOK_BODY='{"probe": "%p", "name": "%n", "alarm": %a, "used": %u,
 
 ### Alarm Filter
 
-Requires Redis to be configured.
+Reduces alarm noise by requiring sustained threshold violations before firing and enforcing a cooldown between alarms. Requires Redis to be configured.
 
 #### Alarm Filter Enabled
 
@@ -245,7 +242,7 @@ PROBE_ALARM_FILTER_ENABLED=false
 
 #### Alarm Filter Wait (in minutes before first alarm)
 
-- `0` - Disabled
+Set to `0` to disable.
 
 ```
 PROBE_ALARM_FILTER_WAIT=5
@@ -253,27 +250,25 @@ PROBE_ALARM_FILTER_WAIT=5
 
 #### Alarm Filter Sleep (in seconds between alarms)
 
-- `0` - Disabled
+Set to `0` to disable.
 
 ```
 PROBE_ALARM_FILTER_SLEEP=300
 ```
 
-## Running the tests
+## Testing
 
-You can run the tests using the following command:
-
-```
+```bash
 go test -v ./...
 ```
 
-## Data visualization
+## Data Visualization
 
-You can display the collected data with the [Satellite](https://github.com/petaki/satellite).
+Collected data can be visualized with [Satellite](https://github.com/petaki/satellite).
 
 ## Contributors
 
-- [@dyipon](https://github.com/dyipon) for development ideas, bug reports and testing
+- [@dyipon](https://github.com/dyipon) - development ideas, bug reports and testing
 
 ## Reporting Issues
 
