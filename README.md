@@ -78,9 +78,13 @@ cp .env.example .env
 
 ## Configuration
 
-The configruation is stored in the `.env` file.
+The configuration is stored in the `.env` file.
 
-### Disk Ignored
+### General
+
+#### Disk Ignored
+
+Patterns to exclude disk partitions from monitoring:
 
 - `PATTERN*` - Prefix
 - `*PATTERN` - Suffix
@@ -93,13 +97,15 @@ PROBE_DISK_IGNORED=/dev,/var/lib/docker/*
 
 ---
 
-### Redis URL
+### Redis
+
+#### Redis URL
 
 ```
 PROBE_REDIS_URL=redis://127.0.0.1:6379/0
 ```
 
-### Redis Key Prefix
+#### Redis Key Prefix
 
 ```
 PROBE_REDIS_KEY_PREFIX=probe:
@@ -107,13 +113,17 @@ PROBE_REDIS_KEY_PREFIX=probe:
 
 ---
 
-### Data Log Enabled (Redis required)
+### Data Log
+
+Requires Redis to be configured.
+
+#### Data Log Enabled
 
 ```
 PROBE_DATA_LOG_ENABLED=true
 ```
 
-### Data Log Timeout (in seconds)
+#### Data Log Timeout (in seconds)
 
 ```
 PROBE_DATA_LOG_TIMEOUT=2592000
@@ -121,13 +131,39 @@ PROBE_DATA_LOG_TIMEOUT=2592000
 
 ---
 
-### Alarm Enabled
+### Log Tail
+
+Tails the last N lines of specified log files on each monitoring cycle.
+
+#### Log Tail Enabled
+
+```
+PROBE_LOG_TAIL_ENABLED=false
+```
+
+#### Log Tail Files (comma-separated)
+
+```
+PROBE_LOG_TAIL_FILES=/var/log/syslog,/var/log/auth.log
+```
+
+#### Log Tail Lines
+
+```
+PROBE_LOG_TAIL_LINES=10
+```
+
+---
+
+### Alarm
+
+#### Alarm Enabled
 
 ```
 PROBE_ALARM_ENABLED=false
 ```
 
-### Alarm CPU Percent
+#### Alarm CPU Percent
 
 - `0` - Disabled
 
@@ -135,7 +171,7 @@ PROBE_ALARM_ENABLED=false
 PROBE_ALARM_CPU_PERCENT=30
 ```
 
-### Alarm Memory Percent
+#### Alarm Memory Percent
 
 - `0` - Disabled
 
@@ -143,7 +179,7 @@ PROBE_ALARM_CPU_PERCENT=30
 PROBE_ALARM_MEMORY_PERCENT=50
 ```
 
-### Alarm Disk Percent
+#### Alarm Disk Percent
 
 - `0` - Disabled
 
@@ -151,7 +187,7 @@ PROBE_ALARM_MEMORY_PERCENT=50
 PROBE_ALARM_DISK_PERCENT=80
 ```
 
-### Alarm Load Value
+#### Alarm Load Value
 
 - `0` - Disabled
 
@@ -159,25 +195,29 @@ PROBE_ALARM_DISK_PERCENT=80
 PROBE_ALARM_LOAD_VALUE=1.0
 ```
 
-### Alarm Webhook Method
+---
+
+### Alarm Webhook
+
+#### Alarm Webhook Method
 
 ```
 PROBE_ALARM_WEBHOOK_METHOD=POST
 ```
 
-### Alarm Webhook URL
+#### Alarm Webhook URL
 
 ```
 PROBE_ALARM_WEBHOOK_URL=http://127.0.0.1:4000/alarm
 ```
 
-### Alarm Webhook Header
+#### Alarm Webhook Header
 
 ```
 PROBE_ALARM_WEBHOOK_HEADER='{"Authorization": "Bearer TOKEN", "Accept": "application/json"}'
 ```
 
-### Alarm Webhook Body
+#### Alarm Webhook Body
 
 - `%p` - Probe
 - `%n` - Name of the watcher
@@ -193,13 +233,17 @@ PROBE_ALARM_WEBHOOK_BODY='{"probe": "%p", "name": "%n", "alarm": %a, "used": %u,
 
 ---
 
-### Alarm Filter Enabled (Redis required)
+### Alarm Filter
+
+Requires Redis to be configured.
+
+#### Alarm Filter Enabled
 
 ```
 PROBE_ALARM_FILTER_ENABLED=false
 ```
 
-### Alarm Filter Wait (in minutes before first alarm)
+#### Alarm Filter Wait (in minutes before first alarm)
 
 - `0` - Disabled
 
@@ -207,7 +251,7 @@ PROBE_ALARM_FILTER_ENABLED=false
 PROBE_ALARM_FILTER_WAIT=5
 ```
 
-### Alarm Filter Sleep (in seconds between alarms)
+#### Alarm Filter Sleep (in seconds between alarms)
 
 - `0` - Disabled
 
