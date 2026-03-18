@@ -30,6 +30,9 @@ func (s *Storage) printValue(m any) error {
 	case model.Load:
 		fmt.Printf("  ✨ Load1: %.2f Load5: %.2f Load15: %.2f\n", value.Load1, value.Load5, value.Load15)
 		fmt.Println()
+	case model.Log:
+		fmt.Printf("  📄 Log:%s:\n%s\n", value.Path, value.Content)
+		fmt.Println()
 	default:
 		return ErrUnknownModelType
 	}

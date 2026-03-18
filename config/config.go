@@ -26,6 +26,9 @@ const (
 	envAlarmFilterEnabled = "PROBE_ALARM_FILTER_ENABLED"
 	envAlarmFilterWait    = "PROBE_ALARM_FILTER_WAIT"
 	envAlarmFilterSleep   = "PROBE_ALARM_FILTER_SLEEP"
+	envLogTailEnabled     = "PROBE_LOG_TAIL_ENABLED"
+	envLogTailFiles       = "PROBE_LOG_TAIL_FILES"
+	envLogTailLines       = "PROBE_LOG_TAIL_LINES"
 )
 
 var envKeys = []string{
@@ -46,6 +49,9 @@ var envKeys = []string{
 	envAlarmFilterEnabled,
 	envAlarmFilterWait,
 	envAlarmFilterSleep,
+	envLogTailEnabled,
+	envLogTailFiles,
+	envLogTailLines,
 }
 
 // Config type.
@@ -67,6 +73,9 @@ type Config struct {
 	AlarmFilterEnabled bool
 	AlarmFilterWait    int
 	AlarmFilterSleep   int
+	LogTailEnabled     bool
+	LogTailFiles       []string
+	LogTailLines       int
 }
 
 // Load function.
@@ -209,6 +218,26 @@ func (c *Config) parse(key string, value string) error {
 		}
 
 		c.AlarmFilterSleep = alarmFilterSleep
+	case envLogTailEnabled:
+		logTailEnabled, err := strconv.ParseBool(value)
+		if err != nil {
+			return err
+		}
+
+		c.LogTailEnabled = logTailEnabled
+	case envLogTailFiles:
+		c.LogTailFiles = strings.Split(value, ",")
+	case envLogTailLines:
+		logTailLines, err := strconv.Atoi(value)
+		if err != nil {
+			return err
+		}
+
+		if logTailLines < 1 {
+			return ErrInvalidValue
+		}
+
+		c.LogTailLines = logTailLines
 	}
 
 	return nil

@@ -35,6 +35,8 @@ func (s *Storage) callAlarm(m any) error {
 		alarm = s.Config.AlarmDiskPercent
 		used = fmt.Sprintf("%.2f", value.Used)
 		link = fmt.Sprintf("/disk?probe=%s&path=%s", probe, value.Path)
+	case model.Log:
+		return nil
 	case model.Load:
 		name = "Load"
 		alarm = s.Config.AlarmLoadValue
