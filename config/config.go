@@ -30,6 +30,7 @@ const (
 	envLogTailFiles       = "PROBE_LOG_TAIL_FILES"
 	envLogTailLines       = "PROBE_LOG_TAIL_LINES"
 	envLogTailBufferSize  = "PROBE_LOG_TAIL_BUFFER_SIZE"
+	envLogTailLimit       = "PROBE_LOG_TAIL_LIMIT"
 )
 
 var envKeys = []string{
@@ -54,6 +55,7 @@ var envKeys = []string{
 	envLogTailFiles,
 	envLogTailLines,
 	envLogTailBufferSize,
+	envLogTailLimit,
 }
 
 // Config type.
@@ -79,6 +81,7 @@ type Config struct {
 	LogTailFiles       []string
 	LogTailLines       int
 	LogTailBufferSize  int
+	LogTailLimit       int
 }
 
 // Load function.
@@ -252,6 +255,17 @@ func (c *Config) parse(key string, value string) error {
 		}
 
 		c.LogTailBufferSize = logTailBufferSize
+	case envLogTailLimit:
+		logTailLimit, err := strconv.Atoi(value)
+		if err != nil {
+			return err
+		}
+
+		if logTailLimit < 1 {
+			return ErrInvalidValue
+		}
+
+		c.LogTailLimit = logTailLimit
 	}
 
 	return nil
