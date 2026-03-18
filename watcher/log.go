@@ -22,7 +22,9 @@ func (Log) Watch(s *storage.Storage, index int, channel chan int) {
 	for _, filePath := range s.Config.LogTailFiles {
 		content, err := tailFile(filePath, s.Config.LogTailLines, s.Config.LogTailBufferSize)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
+
+			continue
 		}
 
 		logModel := model.Log{
