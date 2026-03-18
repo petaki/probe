@@ -30,6 +30,15 @@ func (s *Storage) callAlarm(m any) error {
 		alarm = s.Config.AlarmMemoryPercent
 		used = fmt.Sprintf("%.2f", value.Used)
 		link = fmt.Sprintf("/memory?probe=%s", probe)
+	case []model.ProcessCPU:
+		return nil
+	case []model.ProcessMemory:
+		return nil
+	case model.Load:
+		name = "Load"
+		alarm = s.Config.AlarmLoadValue
+		used = fmt.Sprintf("\"%.2f,%.2f,%.2f\"", value.Load1, value.Load5, value.Load15)
+		link = fmt.Sprintf("/load?probe=%s", probe)
 	case model.Disk:
 		name = fmt.Sprintf("Disk:%s", value.Path)
 		alarm = s.Config.AlarmDiskPercent
@@ -37,11 +46,6 @@ func (s *Storage) callAlarm(m any) error {
 		link = fmt.Sprintf("/disk?probe=%s&path=%s", probe, value.Path)
 	case model.Log:
 		return nil
-	case model.Load:
-		name = "Load"
-		alarm = s.Config.AlarmLoadValue
-		used = fmt.Sprintf("\"%.2f,%.2f,%.2f\"", value.Load1, value.Load5, value.Load15)
-		link = fmt.Sprintf("/load?probe=%s", probe)
 	default:
 		return ErrUnknownModelType
 	}
