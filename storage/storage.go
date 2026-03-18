@@ -468,19 +468,19 @@ func (s *Storage) printValue(m any) error {
 
 func (s *Storage) isPathIgnored(path string) bool {
 	for _, pattern := range s.Config.DiskIgnored {
-		value, hadSuffix := strings.CutSuffix(pattern, "*")
-		value, hadPrefix := strings.CutPrefix(value, "*")
+		value, hasSuffix := strings.CutSuffix(pattern, "*")
+		value, hasPrefix := strings.CutPrefix(value, "*")
 
 		switch {
-		case hadPrefix && hadSuffix:
+		case hasPrefix && hasSuffix:
 			if strings.Contains(path, value) {
 				return true
 			}
-		case hadPrefix:
+		case hasPrefix:
 			if strings.HasSuffix(path, value) {
 				return true
 			}
-		case hadSuffix:
+		case hasSuffix:
 			if strings.HasPrefix(path, value) {
 				return true
 			}
