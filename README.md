@@ -158,6 +158,12 @@ PROBE_LOG_TAIL_LINES=10
 PROBE_LOG_TAIL_BUFFER_SIZE=4096
 ```
 
+#### Log Tail Limit (max entries per log file in Redis)
+
+```
+PROBE_LOG_TAIL_LIMIT=60
+```
+
 ---
 
 ### Alarm

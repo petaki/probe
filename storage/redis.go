@@ -3,6 +3,7 @@ package storage
 import (
 	"encoding/base64"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -138,6 +139,38 @@ func (s *Storage) saveDataLog(m any) error {
 	}
 
 	_, err = conn.Do("EXEC")
+	if err != nil {
+		return err
+	}
+
+	_, ok := m.(model.Log)
+	if ok && s.Config.LogTailLimit > 0 {
+		return s.trimLogEntries(conn, key)
+	}
+
+	return nil
+}
+
+func (s *Storage) trimLogEntries(conn redis.Conn, key string) error {
+	length, err := redis.Int(conn.Do("HLEN", key))
+	if err != nil {
+		return err
+	}
+
+	if length <= s.Config.LogTailLimit {
+		return nil
+	}
+
+	fields, err := redis.Strings(conn.Do("HKEYS", key))
+	if err != nil {
+		return err
+	}
+
+	sort.Strings(fields)
+
+	remove := fields[:length-s.Config.LogTailLimit]
+
+	_, err = conn.Do("HDEL", redis.Args{}.Add(key).AddFlat(remove)...)
 
 	return err
 }

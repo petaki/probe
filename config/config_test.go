@@ -124,4 +124,8 @@ func TestLoadAndParse(t *testing.T) {
 	if config.LogTailBufferSize != 4096 {
 		t.Errorf("Expected log tail buffer size 4096, but got %v", config.LogTailBufferSize)
 	}
+
+	if config.LogTailLimit != 60 {
+		t.Errorf("Expected log tail limit 60, but got %v", config.LogTailLimit)
+	}
 }
