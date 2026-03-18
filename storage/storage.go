@@ -50,7 +50,7 @@ func New(config *config.Config) *Storage {
 }
 
 // Save function.
-func (s *Storage) Save(m interface{}) error {
+func (s *Storage) Save(m any) error {
 	var err error
 
 	switch value := m.(type) {
@@ -103,11 +103,8 @@ func (s *Storage) SaveAlarmConfig() error {
 	_, err := conn.Do(
 		"HSET", redis.Args{}.Add(fmt.Sprintf("%salarm", s.Config.RedisKeyPrefix)).AddFlat(alarm)...,
 	)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 // DeleteAlarmConfig function.
@@ -122,14 +119,11 @@ func (s *Storage) DeleteAlarmConfig() error {
 	_, err := conn.Do(
 		"DEL", fmt.Sprintf("%salarm", s.Config.RedisKeyPrefix),
 	)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
-func (s *Storage) saveDataLog(m interface{}) error {
+func (s *Storage) saveDataLog(m any) error {
 	conn := s.Pool.Get()
 	defer conn.Close()
 
@@ -202,14 +196,11 @@ func (s *Storage) saveDataLog(m interface{}) error {
 	}
 
 	_, err = conn.Do("EXEC")
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
-func (s *Storage) saveAlarm(m interface{}) error {
+func (s *Storage) saveAlarm(m any) error {
 	callAlarm := false
 
 	switch value := m.(type) {
@@ -234,23 +225,13 @@ func (s *Storage) saveAlarm(m interface{}) error {
 	}
 
 	if s.Config.AlarmFilterEnabled {
-		err := s.filterAlarm(m)
-		if err != nil {
-			return err
-		}
-
-		return nil
+		return s.filterAlarm(m)
 	}
 
-	err := s.callAlarm(m)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return s.callAlarm(m)
 }
 
-func (s *Storage) filterAlarm(m interface{}) error {
+func (s *Storage) filterAlarm(m any) error {
 	conn := s.Pool.Get()
 	defer conn.Close()
 
@@ -388,7 +369,7 @@ func (s *Storage) filterAlarm(m interface{}) error {
 	return nil
 }
 
-func (s *Storage) callAlarm(m interface{}) error {
+func (s *Storage) callAlarm(m any) error {
 	probe := strings.ReplaceAll(s.Config.RedisKeyPrefix, ":", "")
 
 	var name string
@@ -454,7 +435,7 @@ func (s *Storage) callAlarm(m interface{}) error {
 	return nil
 }
 
-func (s *Storage) printValue(m interface{}) error {
+func (s *Storage) printValue(m any) error {
 	switch value := m.(type) {
 	case model.CPU:
 		fmt.Printf("  ⚡ CPU: %.2f%%\n", value.Used)
@@ -487,41 +468,33 @@ func (s *Storage) printValue(m interface{}) error {
 
 func (s *Storage) isPathIgnored(path string) bool {
 	for _, pattern := range s.Config.DiskIgnored {
-		value := strings.ReplaceAll(pattern, "*", "")
+		value, hadSuffix := strings.CutSuffix(pattern, "*")
+		value, hadPrefix := strings.CutPrefix(value, "*")
 
-		if pattern[0:1] == "*" && pattern[len(pattern)-1:] == "*" {
+		switch {
+		case hadPrefix && hadSuffix:
 			if strings.Contains(path, value) {
 				return true
 			}
-
-			continue
-		}
-
-		if pattern[0:1] == "*" {
+		case hadPrefix:
 			if strings.HasSuffix(path, value) {
 				return true
 			}
-
-			continue
-		}
-
-		if pattern[len(pattern)-1:] == "*" {
+		case hadSuffix:
 			if strings.HasPrefix(path, value) {
 				return true
 			}
-
-			continue
-		}
-
-		if value == path {
-			return true
+		default:
+			if value == path {
+				return true
+			}
 		}
 	}
 
 	return false
 }
 
-func (s *Storage) key(m interface{}) (string, error) {
+func (s *Storage) key(m any) (string, error) {
 	switch value := m.(type) {
 	case model.CPU:
 		return fmt.Sprintf("%scpu:%s", s.Config.RedisKeyPrefix, s.timestamp()), nil
@@ -573,7 +546,7 @@ func (s *Storage) field(t *time.Time) string {
 	return strconv.FormatInt(date.Unix(), 10)
 }
 
-func (s *Storage) alarmKey(m interface{}) (string, error) {
+func (s *Storage) alarmKey(m any) (string, error) {
 	switch value := m.(type) {
 	case model.CPU:
 		return fmt.Sprintf("%salarm:cpu", s.Config.RedisKeyPrefix), nil
