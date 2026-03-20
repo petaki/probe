@@ -164,6 +164,12 @@ PROBE_LOG_TAIL_BUFFER_SIZE=4096
 PROBE_LOG_TAIL_LIMIT=60
 ```
 
+#### Log Tail Timeout (in seconds)
+
+```
+PROBE_LOG_TAIL_TIMEOUT=259200
+```
+
 ---
 
 ### Alarm

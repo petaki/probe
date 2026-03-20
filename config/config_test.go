@@ -128,4 +128,8 @@ func TestLoadAndParse(t *testing.T) {
 	if config.LogTailLimit != 60 {
 		t.Errorf("Expected log tail limit 60, but got %v", config.LogTailLimit)
 	}
+
+	if config.LogTailTimeout != 259200 {
+		t.Errorf("Expected log tail timeout 259200, but got %v", config.LogTailTimeout)
+	}
 }
