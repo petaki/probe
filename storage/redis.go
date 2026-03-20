@@ -130,9 +130,14 @@ func (s *Storage) saveDataLog(m any) error {
 	}
 
 	if !exists {
-		err = conn.Send(
-			"EXPIRE", key, s.Config.DataLogTimeout,
-		)
+		var timeout int
+		if _, ok := m.(model.Log); ok {
+			timeout = s.Config.LogTailTimeout
+		} else {
+			timeout = s.Config.DataLogTimeout
+		}
+
+		err = conn.Send("EXPIRE", key, timeout)
 		if err != nil {
 			return err
 		}
