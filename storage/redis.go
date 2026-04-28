@@ -40,7 +40,7 @@ func (s *Storage) SaveAlarmConfig() error {
 	}
 
 	_, err := conn.Do(
-		"HSET", redis.Args{}.Add(fmt.Sprintf("%salarm", s.Config.RedisKeyPrefix)).AddFlat(alarm)...,
+		"HSET", redis.Args{}.Add(fmt.Sprintf("%s:alarm", s.Config.Name)).AddFlat(alarm)...,
 	)
 
 	return err
@@ -56,7 +56,7 @@ func (s *Storage) DeleteAlarmConfig() error {
 	defer conn.Close()
 
 	_, err := conn.Do(
-		"DEL", fmt.Sprintf("%salarm", s.Config.RedisKeyPrefix),
+		"DEL", fmt.Sprintf("%s:alarm", s.Config.Name),
 	)
 
 	return err
@@ -354,23 +354,23 @@ func (s *Storage) filterAlarm(m any) error {
 func (s *Storage) key(m any) (string, error) {
 	switch value := m.(type) {
 	case model.CPU:
-		return fmt.Sprintf("%scpu:%s", s.Config.RedisKeyPrefix, s.timestamp()), nil
+		return fmt.Sprintf("%s:cpu:%s", s.Config.Name, s.timestamp()), nil
 	case model.Memory:
-		return fmt.Sprintf("%smemory:%s", s.Config.RedisKeyPrefix, s.timestamp()), nil
+		return fmt.Sprintf("%s:memory:%s", s.Config.Name, s.timestamp()), nil
 	case []model.ProcessCPU:
-		return fmt.Sprintf("%sprocess:cpu:%s", s.Config.RedisKeyPrefix, s.timestamp()), nil
+		return fmt.Sprintf("%s:process:cpu:%s", s.Config.Name, s.timestamp()), nil
 	case []model.ProcessMemory:
-		return fmt.Sprintf("%sprocess:memory:%s", s.Config.RedisKeyPrefix, s.timestamp()), nil
+		return fmt.Sprintf("%s:process:memory:%s", s.Config.Name, s.timestamp()), nil
 	case model.Load:
-		return fmt.Sprintf("%sload:%s", s.Config.RedisKeyPrefix, s.timestamp()), nil
+		return fmt.Sprintf("%s:load:%s", s.Config.Name, s.timestamp()), nil
 	case model.Disk:
 		encodedPath := base64.StdEncoding.EncodeToString([]byte(value.Path))
 
-		return fmt.Sprintf("%sdisk:%s:%s", s.Config.RedisKeyPrefix, s.timestamp(), encodedPath), nil
+		return fmt.Sprintf("%s:disk:%s:%s", s.Config.Name, s.timestamp(), encodedPath), nil
 	case model.Log:
 		encodedPath := base64.StdEncoding.EncodeToString([]byte(value.Path))
 
-		return fmt.Sprintf("%slog:%s:%s", s.Config.RedisKeyPrefix, s.timestamp(), encodedPath), nil
+		return fmt.Sprintf("%s:log:%s:%s", s.Config.Name, s.timestamp(), encodedPath), nil
 	}
 
 	return "", ErrUnknownModelType
@@ -410,15 +410,15 @@ func (s *Storage) field(t *time.Time) string {
 func (s *Storage) alarmKey(m any) (string, error) {
 	switch value := m.(type) {
 	case model.CPU:
-		return fmt.Sprintf("%salarm:cpu", s.Config.RedisKeyPrefix), nil
+		return fmt.Sprintf("%s:alarm:cpu", s.Config.Name), nil
 	case model.Memory:
-		return fmt.Sprintf("%salarm:memory", s.Config.RedisKeyPrefix), nil
+		return fmt.Sprintf("%s:alarm:memory", s.Config.Name), nil
 	case model.Load:
-		return fmt.Sprintf("%salarm:load", s.Config.RedisKeyPrefix), nil
+		return fmt.Sprintf("%s:alarm:load", s.Config.Name), nil
 	case model.Disk:
 		encodedPath := base64.StdEncoding.EncodeToString([]byte(value.Path))
 
-		return fmt.Sprintf("%salarm:disk:%s", s.Config.RedisKeyPrefix, encodedPath), nil
+		return fmt.Sprintf("%s:alarm:disk:%s", s.Config.Name, encodedPath), nil
 	}
 
 	return "", ErrUnknownModelType

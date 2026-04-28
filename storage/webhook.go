@@ -12,7 +12,7 @@ import (
 )
 
 func (s *Storage) callAlarm(m any) error {
-	probe := strings.ReplaceAll(s.Config.RedisKeyPrefix, ":", "")
+	probe := s.Config.Name
 
 	var name string
 	var used string
