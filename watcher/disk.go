@@ -13,9 +13,13 @@ type Disk struct{}
 
 // Watch function.
 func (Disk) Watch(s *storage.Storage, index int, channel chan int) {
+	defer func() { channel <- index }()
+
 	partitions, err := disk.Partitions(false)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+
+		return
 	}
 
 	var diskModels []model.Disk
@@ -23,7 +27,9 @@ func (Disk) Watch(s *storage.Storage, index int, channel chan int) {
 	for _, partition := range partitions {
 		diskUsage, err := disk.Usage(partition.Mountpoint)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
+
+			continue
 		}
 
 		diskModels = append(diskModels, model.Disk{
@@ -35,9 +41,7 @@ func (Disk) Watch(s *storage.Storage, index int, channel chan int) {
 	for _, diskModel := range diskModels {
 		err := s.Save(diskModel)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 	}
-
-	channel <- index
 }
