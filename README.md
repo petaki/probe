@@ -77,7 +77,7 @@ cp .env.example .env
 
 All configuration is done through environment variables in the `.env` file.
 
-A ✅ in the **Always** column means the variable must always be set. A ✅ in a feature column means the variable must be set when that feature is enabled.
+A ✅ marks where the variable is required.
 
 | Option | Always | Data Log | Alarm | Alarm Filter | Log Tail |
 |--------|:------:|:--------:|:-----:|:------------:|:--------:|
