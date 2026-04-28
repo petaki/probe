@@ -13,11 +13,17 @@ import (
 // Process watcher.
 type Process struct{}
 
+const processTopN = 3
+
 // Watch function.
 func (Process) Watch(s *storage.Storage, index int, channel chan int) {
+	defer func() { channel <- index }()
+
 	processes, err := process.Processes()
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+
+		return
 	}
 
 	var processCPUModels []model.ProcessCPU
@@ -60,18 +66,21 @@ func (Process) Watch(s *storage.Storage, index int, channel chan int) {
 		return cmp.Compare(b.Used, a.Used)
 	})
 
-	processCPUModels = processCPUModels[:3]
-	processMemoryModels = processMemoryModels[:3]
+	if len(processCPUModels) > processTopN {
+		processCPUModels = processCPUModels[:processTopN]
+	}
+
+	if len(processMemoryModels) > processTopN {
+		processMemoryModels = processMemoryModels[:processTopN]
+	}
 
 	err = s.Save(processCPUModels)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	err = s.Save(processMemoryModels)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
-
-	channel <- index
 }

@@ -77,7 +77,43 @@ cp .env.example .env
 
 All configuration is done through environment variables in the `.env` file.
 
+A ✅ marks where the variable is required.
+
+| Option | Always | Data Log | Alarm | Alarm Filter | Log Tail |
+|--------|:------:|:--------:|:-----:|:------------:|:--------:|
+| `PROBE_NAME` | ✅ | | | | |
+| `PROBE_DISK_IGNORED` | ✅ | | | | |
+| `PROBE_DATA_LOG_ENABLED` | ✅ | | | | |
+| `PROBE_ALARM_ENABLED` | ✅ | | | | |
+| `PROBE_ALARM_FILTER_ENABLED` | ✅ | | | | |
+| `PROBE_LOG_TAIL_ENABLED` | ✅ | | | | |
+| `PROBE_REDIS_URL` | | ✅ | | ✅ | |
+| `PROBE_DATA_LOG_TIMEOUT` | | ✅ | | | |
+| `PROBE_ALARM_CPU_PERCENT` | | | ✅ | | |
+| `PROBE_ALARM_MEMORY_PERCENT` | | | ✅ | | |
+| `PROBE_ALARM_DISK_PERCENT` | | | ✅ | | |
+| `PROBE_ALARM_LOAD_VALUE` | | | ✅ | | |
+| `PROBE_ALARM_WEBHOOK_METHOD` | | | ✅ | | |
+| `PROBE_ALARM_WEBHOOK_URL` | | | ✅ | | |
+| `PROBE_ALARM_WEBHOOK_HEADER` | | | ✅ | | |
+| `PROBE_ALARM_WEBHOOK_BODY` | | | ✅ | | |
+| `PROBE_ALARM_FILTER_WAIT` | | | | ✅ | |
+| `PROBE_ALARM_FILTER_SLEEP` | | | | ✅ | |
+| `PROBE_LOG_TAIL_FILES` | | | | | ✅ |
+| `PROBE_LOG_TAIL_LINES` | | | | | ✅ |
+| `PROBE_LOG_TAIL_BUFFER_SIZE` | | | | | ✅ |
+| `PROBE_LOG_TAIL_LIMIT` | | | | | ✅ |
+| `PROBE_LOG_TAIL_TIMEOUT` | | | | | ✅ |
+
 ### General
+
+#### Probe Name
+
+Identifier of this probe instance. Used as the `%p` placeholder in alarm webhook payloads and as the Redis key prefix.
+
+```
+PROBE_NAME=probe
+```
 
 #### Disk Ignored
 
@@ -98,16 +134,12 @@ PROBE_DISK_IGNORED=/dev,/var/lib/docker/*
 
 ### Redis
 
+Required when data logging or alarm filtering is enabled. Keys are prefixed with `<PROBE_NAME>:`.
+
 #### Redis URL
 
 ```
 PROBE_REDIS_URL=redis://127.0.0.1:6379/0
-```
-
-#### Redis Key Prefix
-
-```
-PROBE_REDIS_KEY_PREFIX=probe:
 ```
 
 ---
@@ -167,7 +199,7 @@ PROBE_LOG_TAIL_LIMIT=60
 #### Log Tail Timeout (in seconds)
 
 ```
-PROBE_LOG_TAIL_TIMEOUT=259200
+PROBE_LOG_TAIL_TIMEOUT=172800
 ```
 
 ---

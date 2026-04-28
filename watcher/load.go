@@ -13,9 +13,13 @@ type Load struct{}
 
 // Watch function.
 func (Load) Watch(s *storage.Storage, index int, channel chan int) {
+	defer func() { channel <- index }()
+
 	stat, err := load.Avg()
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+
+		return
 	}
 
 	loadModel := model.Load{
@@ -26,8 +30,6 @@ func (Load) Watch(s *storage.Storage, index int, channel chan int) {
 
 	err = s.Save(loadModel)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
-
-	channel <- index
 }

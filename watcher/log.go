@@ -15,8 +15,9 @@ type Log struct{}
 
 // Watch function.
 func (Log) Watch(s *storage.Storage, index int, channel chan int) {
+	defer func() { channel <- index }()
+
 	if !s.Config.LogTailEnabled {
-		channel <- index
 		return
 	}
 
@@ -35,11 +36,9 @@ func (Log) Watch(s *storage.Storage, index int, channel chan int) {
 
 		err = s.Save(logModel)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 	}
-
-	channel <- index
 }
 
 func tailFile(path string, c *config.Config) (string, error) {

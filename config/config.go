@@ -9,9 +9,9 @@ import (
 )
 
 const (
+	envName               = "PROBE_NAME"
 	envDiskIgnored        = "PROBE_DISK_IGNORED"
 	envRedisURL           = "PROBE_REDIS_URL"
-	envRedisKeyPrefix     = "PROBE_REDIS_KEY_PREFIX"
 	envDataLogEnabled     = "PROBE_DATA_LOG_ENABLED"
 	envDataLogTimeout     = "PROBE_DATA_LOG_TIMEOUT"
 	envAlarmEnabled       = "PROBE_ALARM_ENABLED"
@@ -34,37 +34,63 @@ const (
 	envLogTailTimeout     = "PROBE_LOG_TAIL_TIMEOUT"
 )
 
-var envKeys = []string{
+var alwaysRequiredKeys = []string{
+	envName,
 	envDiskIgnored,
-	envRedisURL,
-	envRedisKeyPrefix,
 	envDataLogEnabled,
-	envDataLogTimeout,
 	envAlarmEnabled,
-	envAlarmCPUPercent,
-	envAlarmMemoryPercent,
-	envAlarmDiskPercent,
-	envAlarmLoadValue,
-	envAlarmWebhookMethod,
-	envAlarmWebhookURL,
-	envAlarmWebhookHeader,
-	envAlarmWebhookBody,
 	envAlarmFilterEnabled,
-	envAlarmFilterWait,
-	envAlarmFilterSleep,
 	envLogTailEnabled,
-	envLogTailFiles,
-	envLogTailLines,
-	envLogTailBufferSize,
-	envLogTailLimit,
-	envLogTailTimeout,
+}
+
+type conditionalGroup struct {
+	required func(*Config) bool
+	keys     []string
+}
+
+var conditionalGroups = []conditionalGroup{
+	{
+		required: func(c *Config) bool { return c.DataLogEnabled || c.AlarmFilterEnabled },
+		keys:     []string{envRedisURL},
+	},
+	{
+		required: func(c *Config) bool { return c.DataLogEnabled },
+		keys:     []string{envDataLogTimeout},
+	},
+	{
+		required: func(c *Config) bool { return c.AlarmEnabled },
+		keys: []string{
+			envAlarmCPUPercent,
+			envAlarmMemoryPercent,
+			envAlarmDiskPercent,
+			envAlarmLoadValue,
+			envAlarmWebhookMethod,
+			envAlarmWebhookURL,
+			envAlarmWebhookHeader,
+			envAlarmWebhookBody,
+		},
+	},
+	{
+		required: func(c *Config) bool { return c.AlarmFilterEnabled },
+		keys:     []string{envAlarmFilterWait, envAlarmFilterSleep},
+	},
+	{
+		required: func(c *Config) bool { return c.LogTailEnabled },
+		keys: []string{
+			envLogTailFiles,
+			envLogTailLines,
+			envLogTailBufferSize,
+			envLogTailLimit,
+			envLogTailTimeout,
+		},
+	},
 }
 
 // Config type.
 type Config struct {
+	Name               string
 	DiskIgnored        []string
 	RedisURL           string
-	RedisKeyPrefix     string
 	DataLogEnabled     bool
 	DataLogTimeout     int
 	AlarmEnabled       bool
@@ -91,29 +117,50 @@ type Config struct {
 func Load() (*Config, error) {
 	config := Config{}
 
-	for _, key := range envKeys {
-		value, hasKey := os.LookupEnv(key)
-		if !hasKey {
-			return nil, fmt.Errorf("%v is not defined", key)
-		}
-
-		err := config.parse(key, value)
+	for _, key := range alwaysRequiredKeys {
+		err := config.loadKey(key)
 		if err != nil {
 			return nil, err
+		}
+	}
+
+	for _, group := range conditionalGroups {
+		if !group.required(&config) {
+			continue
+		}
+
+		for _, key := range group.keys {
+			err := config.loadKey(key)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
 	return &config, nil
 }
 
+func (c *Config) loadKey(key string) error {
+	value, hasKey := os.LookupEnv(key)
+	if !hasKey {
+		return fmt.Errorf("%v is not defined", key)
+	}
+
+	return c.parse(key, value)
+}
+
 func (c *Config) parse(key string, value string) error {
 	switch key {
+	case envName:
+		if value == "" {
+			return ErrInvalidValue
+		}
+
+		c.Name = value
 	case envDiskIgnored:
 		c.DiskIgnored = strings.Split(value, ",")
 	case envRedisURL:
 		c.RedisURL = value
-	case envRedisKeyPrefix:
-		c.RedisKeyPrefix = value
 	case envDataLogEnabled:
 		dataLogEnabled, err := strconv.ParseBool(value)
 		if err != nil {

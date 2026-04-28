@@ -13,9 +13,13 @@ type CPU struct{}
 
 // Watch function.
 func (CPU) Watch(s *storage.Storage, index int, channel chan int) {
+	defer func() { channel <- index }()
+
 	cpuPercent, err := cpu.Percent(0, false)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+
+		return
 	}
 
 	cpuModel := model.CPU{
@@ -24,8 +28,6 @@ func (CPU) Watch(s *storage.Storage, index int, channel chan int) {
 
 	err = s.Save(cpuModel)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
-
-	channel <- index
 }
