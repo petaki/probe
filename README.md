@@ -77,6 +77,34 @@ cp .env.example .env
 
 All configuration is done through environment variables in the `.env` file.
 
+A ✅ in the **Always** column means the variable must always be set. A ✅ in a feature column means the variable must be set when that feature is enabled.
+
+| Option | Always | Data Log | Alarm | Alarm Filter | Log Tail |
+|--------|:------:|:--------:|:-----:|:------------:|:--------:|
+| `PROBE_NAME` | ✅ | | | | |
+| `PROBE_DISK_IGNORED` | ✅ | | | | |
+| `PROBE_DATA_LOG_ENABLED` | ✅ | | | | |
+| `PROBE_ALARM_ENABLED` | ✅ | | | | |
+| `PROBE_ALARM_FILTER_ENABLED` | ✅ | | | | |
+| `PROBE_LOG_TAIL_ENABLED` | ✅ | | | | |
+| `PROBE_REDIS_URL` | | ✅ | | ✅ | |
+| `PROBE_DATA_LOG_TIMEOUT` | | ✅ | | | |
+| `PROBE_ALARM_CPU_PERCENT` | | | ✅ | | |
+| `PROBE_ALARM_MEMORY_PERCENT` | | | ✅ | | |
+| `PROBE_ALARM_DISK_PERCENT` | | | ✅ | | |
+| `PROBE_ALARM_LOAD_VALUE` | | | ✅ | | |
+| `PROBE_ALARM_WEBHOOK_METHOD` | | | ✅ | | |
+| `PROBE_ALARM_WEBHOOK_URL` | | | ✅ | | |
+| `PROBE_ALARM_WEBHOOK_HEADER` | | | ✅ | | |
+| `PROBE_ALARM_WEBHOOK_BODY` | | | ✅ | | |
+| `PROBE_ALARM_FILTER_WAIT` | | | | ✅ | |
+| `PROBE_ALARM_FILTER_SLEEP` | | | | ✅ | |
+| `PROBE_LOG_TAIL_FILES` | | | | | ✅ |
+| `PROBE_LOG_TAIL_LINES` | | | | | ✅ |
+| `PROBE_LOG_TAIL_BUFFER_SIZE` | | | | | ✅ |
+| `PROBE_LOG_TAIL_LIMIT` | | | | | ✅ |
+| `PROBE_LOG_TAIL_TIMEOUT` | | | | | ✅ |
+
 ### General
 
 #### Probe Name
