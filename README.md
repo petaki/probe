@@ -109,7 +109,7 @@ A ✅ marks where the variable is required.
 
 #### Probe Name
 
-Identifier of this probe instance. Used as the `%p` placeholder in alarm webhook payloads and as the Redis key prefix.
+Identifier of this probe instance. Used as the `%p` webhook placeholder and the Redis key prefix.
 
 ```
 PROBE_NAME=probe
