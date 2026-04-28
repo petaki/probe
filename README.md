@@ -79,6 +79,14 @@ All configuration is done through environment variables in the `.env` file.
 
 ### General
 
+#### Probe Name
+
+Identifier of this probe instance. Used as the `%p` placeholder in alarm webhook payloads and as the Redis key prefix.
+
+```
+PROBE_NAME=probe
+```
+
 #### Disk Ignored
 
 Comma-separated patterns to exclude disk partitions from monitoring:
@@ -98,16 +106,12 @@ PROBE_DISK_IGNORED=/dev,/var/lib/docker/*
 
 ### Redis
 
+Required when data logging or alarm filtering is enabled. Keys are prefixed with `<PROBE_NAME>:`.
+
 #### Redis URL
 
 ```
 PROBE_REDIS_URL=redis://127.0.0.1:6379/0
-```
-
-#### Redis Key Prefix
-
-```
-PROBE_REDIS_KEY_PREFIX=probe:
 ```
 
 ---
@@ -167,7 +171,7 @@ PROBE_LOG_TAIL_LIMIT=60
 #### Log Tail Timeout (in seconds)
 
 ```
-PROBE_LOG_TAIL_TIMEOUT=259200
+PROBE_LOG_TAIL_TIMEOUT=172800
 ```
 
 ---
