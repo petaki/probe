@@ -25,6 +25,10 @@ func (Disk) Watch(s *storage.Storage, index int, channel chan int) {
 	var diskModels []model.Disk
 
 	for _, partition := range partitions {
+		if partition.Mountpoint == "" {
+			continue
+		}
+
 		diskUsage, err := disk.Usage(partition.Mountpoint)
 		if err != nil {
 			log.Println(err)
