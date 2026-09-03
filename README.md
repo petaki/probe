@@ -50,7 +50,7 @@ Download the latest release for your platform from the [GitHub Releases](https:/
 
 #### Prerequisites
 
-- Go: `Version >= 1.26`
+- Go: `Version >= 1.27`
 
 #### Steps
 

@@ -5,7 +5,7 @@ import (
 
 	"github.com/petaki/probe/model"
 	"github.com/petaki/probe/storage"
-	"github.com/shirou/gopsutil/v3/load"
+	"github.com/shirou/gopsutil/v4/load"
 )
 
 // Load watcher.
