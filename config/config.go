@@ -262,6 +262,10 @@ func (c *Config) parse(key string, value string) error {
 			return ErrInvalidTimeout
 		}
 
+		if alarmFilterWait > 1 && c.AlarmEnabled && !c.DataLogEnabled {
+			return ErrInvalidValue
+		}
+
 		c.AlarmFilterWait = alarmFilterWait
 	case envAlarmFilterSleep:
 		alarmFilterSleep, err := strconv.Atoi(value)
