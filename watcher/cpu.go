@@ -22,6 +22,12 @@ func (CPU) Watch(s *storage.Storage, index int, channel chan int) {
 		return
 	}
 
+	if len(cpuPercent) == 0 {
+		log.Println("watcher: no cpu percent")
+
+		return
+	}
+
 	cpuModel := model.CPU{
 		Used: cpuPercent[0],
 	}

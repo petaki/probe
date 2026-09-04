@@ -52,13 +52,15 @@ func (s *Storage) callAlarm(m any) error {
 
 	now := time.Now()
 
-	body := strings.ReplaceAll(s.Config.AlarmWebhookBody, "%p", probe)
-	body = strings.ReplaceAll(body, "%n", name)
-	body = strings.ReplaceAll(body, "%a", fmt.Sprintf("%.2f", alarm))
-	body = strings.ReplaceAll(body, "%u", used)
-	body = strings.ReplaceAll(body, "%t", now.Format(time.RFC3339))
-	body = strings.ReplaceAll(body, "%x", strconv.FormatInt(now.Unix(), 10))
-	body = strings.ReplaceAll(body, "%l", link)
+	body := strings.NewReplacer(
+		"%p", probe,
+		"%n", name,
+		"%a", fmt.Sprintf("%.2f", alarm),
+		"%u", used,
+		"%t", now.Format(time.RFC3339),
+		"%x", strconv.FormatInt(now.Unix(), 10),
+		"%l", link,
+	).Replace(s.Config.AlarmWebhookBody)
 
 	req, err := http.NewRequest(s.Config.AlarmWebhookMethod, s.Config.AlarmWebhookURL, bytes.NewBuffer([]byte(body)))
 	if err != nil {

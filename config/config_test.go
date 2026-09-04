@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"os"
 	"testing"
 
@@ -406,6 +407,141 @@ func resetEnv(t *testing.T) {
 			t.Cleanup(func() { os.Setenv(key, original) })
 		} else {
 			t.Cleanup(func() { os.Unsetenv(key) })
+		}
+	}
+}
+
+func TestLoadRejectsAlarmFilterWaitWithoutDataLog(t *testing.T) {
+	resetEnv(t)
+
+	t.Setenv(envName, "probe")
+	t.Setenv(envDiskIgnored, "/dev")
+	t.Setenv(envDataLogEnabled, "false")
+	t.Setenv(envAlarmEnabled, "true")
+	t.Setenv(envAlarmCPUPercent, "30")
+	t.Setenv(envAlarmMemoryPercent, "50")
+	t.Setenv(envAlarmDiskPercent, "80")
+	t.Setenv(envAlarmLoadValue, "1.0")
+	t.Setenv(envAlarmWebhookMethod, "POST")
+	t.Setenv(envAlarmWebhookURL, "http://127.0.0.1:4000/alarm")
+	t.Setenv(envAlarmWebhookHeader, "{}")
+	t.Setenv(envAlarmWebhookBody, "{}")
+	t.Setenv(envAlarmFilterEnabled, "true")
+	t.Setenv(envAlarmFilterWait, "5")
+	t.Setenv(envAlarmFilterSleep, "300")
+	t.Setenv(envRedisURL, "redis://127.0.0.1:6379/0")
+	t.Setenv(envLogTailEnabled, "false")
+
+	_, err := Load()
+	if !errors.Is(err, ErrInvalidValue) {
+		t.Fatalf("Expected Load to fail with ErrInvalidValue, but got: %v", err)
+	}
+}
+
+func TestLoadAllowsAlarmFilterWaitWithDataLog(t *testing.T) {
+	resetEnv(t)
+
+	t.Setenv(envName, "probe")
+	t.Setenv(envDiskIgnored, "/dev")
+	t.Setenv(envDataLogEnabled, "true")
+	t.Setenv(envDataLogTimeout, "2592000")
+	t.Setenv(envAlarmEnabled, "true")
+	t.Setenv(envAlarmCPUPercent, "30")
+	t.Setenv(envAlarmMemoryPercent, "50")
+	t.Setenv(envAlarmDiskPercent, "80")
+	t.Setenv(envAlarmLoadValue, "1.0")
+	t.Setenv(envAlarmWebhookMethod, "POST")
+	t.Setenv(envAlarmWebhookURL, "http://127.0.0.1:4000/alarm")
+	t.Setenv(envAlarmWebhookHeader, "{}")
+	t.Setenv(envAlarmWebhookBody, "{}")
+	t.Setenv(envAlarmFilterEnabled, "true")
+	t.Setenv(envAlarmFilterWait, "5")
+	t.Setenv(envAlarmFilterSleep, "300")
+	t.Setenv(envRedisURL, "redis://127.0.0.1:6379/0")
+	t.Setenv(envLogTailEnabled, "false")
+
+	_, err := Load()
+	if err != nil {
+		t.Fatalf("Expected Load to succeed with the data log enabled, but got: %v", err)
+	}
+}
+
+func TestLoadAllowsAlarmFilterSleepOnlyWithoutDataLog(t *testing.T) {
+	resetEnv(t)
+
+	t.Setenv(envName, "probe")
+	t.Setenv(envDiskIgnored, "/dev")
+	t.Setenv(envDataLogEnabled, "false")
+	t.Setenv(envAlarmEnabled, "true")
+	t.Setenv(envAlarmCPUPercent, "30")
+	t.Setenv(envAlarmMemoryPercent, "50")
+	t.Setenv(envAlarmDiskPercent, "80")
+	t.Setenv(envAlarmLoadValue, "1.0")
+	t.Setenv(envAlarmWebhookMethod, "POST")
+	t.Setenv(envAlarmWebhookURL, "http://127.0.0.1:4000/alarm")
+	t.Setenv(envAlarmWebhookHeader, "{}")
+	t.Setenv(envAlarmWebhookBody, "{}")
+	t.Setenv(envAlarmFilterEnabled, "true")
+	t.Setenv(envAlarmFilterWait, "0")
+	t.Setenv(envAlarmFilterSleep, "300")
+	t.Setenv(envRedisURL, "redis://127.0.0.1:6379/0")
+	t.Setenv(envLogTailEnabled, "false")
+
+	_, err := Load()
+	if err != nil {
+		t.Fatalf("Expected Load to succeed with the alarm filter wait disabled, but got: %v", err)
+	}
+}
+
+func TestLoadRejectsEmptyLogTailFiles(t *testing.T) {
+	resetEnv(t)
+
+	t.Setenv(envName, "probe")
+	t.Setenv(envDiskIgnored, "/dev")
+	t.Setenv(envDataLogEnabled, "false")
+	t.Setenv(envAlarmEnabled, "false")
+	t.Setenv(envAlarmFilterEnabled, "false")
+	t.Setenv(envLogTailEnabled, "true")
+	t.Setenv(envLogTailFiles, "")
+	t.Setenv(envLogTailLines, "10")
+	t.Setenv(envLogTailBufferSize, "4096")
+	t.Setenv(envLogTailLimit, "60")
+	t.Setenv(envLogTailTimeout, "172800")
+
+	_, err := Load()
+	if !errors.Is(err, ErrInvalidValue) {
+		t.Fatalf("Expected Load to fail with ErrInvalidValue, but got: %v", err)
+	}
+}
+
+func TestLoadSkipsEmptyLogTailFileEntries(t *testing.T) {
+	resetEnv(t)
+
+	t.Setenv(envName, "probe")
+	t.Setenv(envDiskIgnored, "/dev")
+	t.Setenv(envDataLogEnabled, "false")
+	t.Setenv(envAlarmEnabled, "false")
+	t.Setenv(envAlarmFilterEnabled, "false")
+	t.Setenv(envLogTailEnabled, "true")
+	t.Setenv(envLogTailFiles, "/var/log/syslog,,/var/log/auth.log,")
+	t.Setenv(envLogTailLines, "10")
+	t.Setenv(envLogTailBufferSize, "4096")
+	t.Setenv(envLogTailLimit, "60")
+	t.Setenv(envLogTailTimeout, "172800")
+
+	config, err := Load()
+	if err != nil {
+		t.Fatalf("Expected Load to succeed, but got: %v", err)
+	}
+
+	want := []string{"/var/log/syslog", "/var/log/auth.log"}
+	if len(config.LogTailFiles) != len(want) {
+		t.Fatalf("Expected %v, but got %v", want, config.LogTailFiles)
+	}
+
+	for i, value := range want {
+		if config.LogTailFiles[i] != value {
+			t.Errorf("Expected %v, but got %v", want, config.LogTailFiles)
 		}
 	}
 }

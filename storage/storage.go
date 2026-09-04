@@ -12,9 +12,10 @@ import (
 
 // Storage type.
 type Storage struct {
-	Config *config.Config
-	Pool   *redis.Pool
-	Client *http.Client
+	Config     *config.Config
+	Pool       *redis.Pool
+	Client     *http.Client
+	normalizer *strings.Replacer
 }
 
 // New function.
@@ -33,9 +34,10 @@ func New(config *config.Config) *Storage {
 	}
 
 	return &Storage{
-		Config: config,
-		Pool:   pool,
-		Client: client,
+		Config:     config,
+		Pool:       pool,
+		Client:     client,
+		normalizer: strings.NewReplacer(":", "_", "|", "_"),
 	}
 }
 

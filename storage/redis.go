@@ -96,7 +96,7 @@ func (s *Storage) saveDataLog(m any) error {
 		var v []string
 
 		for _, p := range value {
-			v = append(v, fmt.Sprintf("%s:%f", p.Name, p.Used))
+			v = append(v, fmt.Sprintf("%s:%f", s.normalizer.Replace(p.Name), p.Used))
 		}
 
 		err = conn.Send(
@@ -106,7 +106,7 @@ func (s *Storage) saveDataLog(m any) error {
 		var v []string
 
 		for _, p := range value {
-			v = append(v, fmt.Sprintf("%s:%f", p.Name, p.Used))
+			v = append(v, fmt.Sprintf("%s:%f", s.normalizer.Replace(p.Name), p.Used))
 		}
 
 		err = conn.Send(
@@ -171,9 +171,13 @@ func (s *Storage) trimLogEntries(conn redis.Conn, key string) error {
 		return err
 	}
 
+	if len(fields) <= s.Config.LogTailLimit {
+		return nil
+	}
+
 	sort.Strings(fields)
 
-	remove := fields[:length-s.Config.LogTailLimit]
+	remove := fields[:len(fields)-s.Config.LogTailLimit]
 
 	_, err = conn.Do("HDEL", redis.Args{}.Add(key).AddFlat(remove)...)
 
