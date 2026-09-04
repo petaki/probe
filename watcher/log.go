@@ -13,6 +13,8 @@ import (
 // Log watcher.
 type Log struct{}
 
+const tailMaxSize = 1024 * 1024
+
 // Watch function.
 func (Log) Watch(s *storage.Storage, index int, channel chan int) {
 	defer func() { channel <- index }()
@@ -59,12 +61,17 @@ func tailFile(path string, c *config.Config) (string, error) {
 		return "", nil
 	}
 
+	limit := int64(0)
+	if size > tailMaxSize {
+		limit = size - tailMaxSize
+	}
+
 	newlines := 0
 	cursor := size
 	buf := make([]byte, c.LogTailBufferSize)
 
-	for cursor > 0 {
-		chunkSize := min(int64(len(buf)), cursor)
+	for cursor > limit {
+		chunkSize := min(int64(len(buf)), cursor-limit)
 		cursor -= chunkSize
 
 		n, err := file.ReadAt(buf[:chunkSize], cursor)
@@ -91,7 +98,7 @@ func tailFile(path string, c *config.Config) (string, error) {
 		}
 	}
 
-	return readTail(file, 0, size)
+	return readTail(file, limit, size)
 }
 
 func readTail(file *os.File, start, end int64) (string, error) {
