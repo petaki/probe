@@ -286,7 +286,21 @@ func (c *Config) parse(key string, value string) error {
 
 		c.LogTailEnabled = logTailEnabled
 	case envLogTailFiles:
-		c.LogTailFiles = strings.Split(value, ",")
+		var logTailFiles []string
+
+		for file := range strings.SplitSeq(value, ",") {
+			if file == "" {
+				continue
+			}
+
+			logTailFiles = append(logTailFiles, file)
+		}
+
+		if len(logTailFiles) == 0 {
+			return ErrInvalidValue
+		}
+
+		c.LogTailFiles = logTailFiles
 	case envLogTailLines:
 		logTailLines, err := strconv.Atoi(value)
 		if err != nil {
