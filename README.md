@@ -166,6 +166,8 @@ PROBE_DATA_LOG_TIMEOUT=2592000
 
 Tails the last N lines of specified log files on each monitoring cycle.
 
+At most 1 MiB is read from the end of a file. A file with fewer than `PROBE_LOG_TAIL_LINES` newlines within that window is truncated to it.
+
 #### Log Tail Enabled
 
 ```
@@ -173,6 +175,8 @@ PROBE_LOG_TAIL_ENABLED=false
 ```
 
 #### Log Tail Files (comma-separated)
+
+Empty entries are skipped, so a trailing comma is harmless. At least one path is required.
 
 ```
 PROBE_LOG_TAIL_FILES=/var/log/syslog,/var/log/auth.log
@@ -282,7 +286,7 @@ PROBE_ALARM_WEBHOOK_BODY='{"probe": "%p", "name": "%n", "alarm": %a, "used": %u,
 
 ### Alarm Filter
 
-Reduces alarm noise by requiring sustained threshold violations before firing and enforcing a cooldown between alarms. Requires Redis to be configured.
+Reduces alarm noise by requiring sustained threshold violations before firing and enforcing a cooldown between alarms. Requires Redis to be configured, and the data log for the wait.
 
 #### Alarm Filter Enabled
 
@@ -293,6 +297,8 @@ PROBE_ALARM_FILTER_ENABLED=false
 #### Alarm Filter Wait (in minutes before first alarm)
 
 Set to `0` to disable.
+
+Values above `1` read the previous minutes back from the data log. With `PROBE_ALARM_ENABLED=true`, this requires `PROBE_DATA_LOG_ENABLED=true` as well; Probe refuses to start otherwise, because the history it checks would never exist and every alarm would be filtered out.
 
 ```
 PROBE_ALARM_FILTER_WAIT=5
