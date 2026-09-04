@@ -18,7 +18,12 @@ func newPool(config *config.Config) *redis.Pool {
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
 		Dial: func() (redis.Conn, error) {
-			return redis.DialURL(config.RedisURL)
+			return redis.DialURL(
+				config.RedisURL,
+				redis.DialConnectTimeout(5*time.Second),
+				redis.DialReadTimeout(5*time.Second),
+				redis.DialWriteTimeout(5*time.Second),
+			)
 		},
 	}
 }
