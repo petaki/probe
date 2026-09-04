@@ -166,6 +166,8 @@ PROBE_DATA_LOG_TIMEOUT=2592000
 
 Tails the last N lines of specified log files on each monitoring cycle.
 
+At most 1 MiB is read from the end of each file.
+
 #### Log Tail Enabled
 
 ```
@@ -173,6 +175,8 @@ PROBE_LOG_TAIL_ENABLED=false
 ```
 
 #### Log Tail Files (comma-separated)
+
+Empty entries are skipped. At least one path is required.
 
 ```
 PROBE_LOG_TAIL_FILES=/var/log/syslog,/var/log/auth.log
@@ -293,6 +297,8 @@ PROBE_ALARM_FILTER_ENABLED=false
 #### Alarm Filter Wait (in minutes before first alarm)
 
 Set to `0` to disable.
+
+Values above `1` require `PROBE_DATA_LOG_ENABLED=true`.
 
 ```
 PROBE_ALARM_FILTER_WAIT=5
