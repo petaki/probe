@@ -51,9 +51,9 @@ func TestIsPathIgnored(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		got := storage.isPathIgnored(tc.path)
+		got := storage.IsPathIgnored(tc.path)
 		if got != tc.want {
-			t.Errorf("isPathIgnored(%q) = %v, want %v", tc.path, got, tc.want)
+			t.Errorf("IsPathIgnored(%q) = %v, want %v", tc.path, got, tc.want)
 		}
 	}
 }

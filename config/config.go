@@ -143,10 +143,15 @@ func Load() (*Config, error) {
 func (c *Config) loadKey(key string) error {
 	value, hasKey := os.LookupEnv(key)
 	if !hasKey {
-		return fmt.Errorf("%v is not defined", key)
+		return fmt.Errorf("%w: %s", ErrNotDefined, key)
 	}
 
-	return c.parse(key, value)
+	err := c.parse(key, value)
+	if err != nil {
+		return fmt.Errorf("%w: %s, %w", ErrInvalidKey, key, err)
+	}
+
+	return nil
 }
 
 func (c *Config) parse(key string, value string) error {

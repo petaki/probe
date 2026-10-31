@@ -71,7 +71,9 @@ func (s *Storage) saveDataLog(m any) error {
 	conn := s.Pool.Get()
 	defer conn.Close()
 
-	key, err := s.key(m)
+	now := time.Now()
+
+	key, err := s.key(m, &now)
 	if err != nil {
 		return err
 	}
@@ -85,8 +87,6 @@ func (s *Storage) saveDataLog(m any) error {
 	if err != nil {
 		return err
 	}
-
-	now := time.Now()
 
 	switch value := m.(type) {
 	case model.CPU:
@@ -246,14 +246,15 @@ func (s *Storage) filterAlarm(m any) error {
 	}
 
 	if s.Config.AlarmFilterWait > 1 {
-		key, err := s.key(m)
+		now := time.Now()
+
+		key, err := s.key(m, &now)
 		if err != nil {
 			return err
 		}
 
 		var fields []string
 
-		now := time.Now()
 		end := time.Date(
 			now.Year(),
 			now.Month(),
@@ -305,7 +306,7 @@ func (s *Storage) filterAlarm(m any) error {
 				segments := strings.SplitN(raw, ":", 3)
 
 				if len(segments) != 3 {
-					continue
+					return nil
 				}
 
 				for _, segment := range segments {
@@ -332,70 +333,49 @@ func (s *Storage) filterAlarm(m any) error {
 	}
 
 	if s.Config.AlarmFilterSleep > 0 {
-		err = conn.Send("MULTI")
-		if err != nil {
-			return err
-		}
-
-		err = conn.Send(
-			"SET", alarmKey, true,
+		_, err = conn.Do(
+			"SET", alarmKey, 1, "EX", s.Config.AlarmFilterSleep,
 		)
-		if err != nil {
-			return err
-		}
-
-		err = conn.Send(
-			"EXPIRE", alarmKey, s.Config.AlarmFilterSleep,
-		)
-		if err != nil {
-			return err
-		}
-
-		_, err = conn.Do("EXEC")
-		if err != nil {
-			return err
-		}
 	}
 
-	return nil
+	return err
 }
 
-func (s *Storage) key(m any) (string, error) {
+func (s *Storage) key(m any, t *time.Time) (string, error) {
 	switch value := m.(type) {
 	case model.CPU:
-		return fmt.Sprintf("%s:cpu:%s", s.Config.Name, s.timestamp()), nil
+		return fmt.Sprintf("%s:cpu:%s", s.Config.Name, s.timestamp(t)), nil
 	case model.Memory:
-		return fmt.Sprintf("%s:memory:%s", s.Config.Name, s.timestamp()), nil
+		return fmt.Sprintf("%s:memory:%s", s.Config.Name, s.timestamp(t)), nil
 	case []model.ProcessCPU:
-		return fmt.Sprintf("%s:process:cpu:%s", s.Config.Name, s.timestamp()), nil
+		return fmt.Sprintf("%s:process:cpu:%s", s.Config.Name, s.timestamp(t)), nil
 	case []model.ProcessMemory:
-		return fmt.Sprintf("%s:process:memory:%s", s.Config.Name, s.timestamp()), nil
+		return fmt.Sprintf("%s:process:memory:%s", s.Config.Name, s.timestamp(t)), nil
 	case model.Load:
-		return fmt.Sprintf("%s:load:%s", s.Config.Name, s.timestamp()), nil
+		return fmt.Sprintf("%s:load:%s", s.Config.Name, s.timestamp(t)), nil
 	case model.Disk:
 		encodedPath := base64.StdEncoding.EncodeToString([]byte(value.Path))
 
-		return fmt.Sprintf("%s:disk:%s:%s", s.Config.Name, s.timestamp(), encodedPath), nil
+		return fmt.Sprintf("%s:disk:%s:%s", s.Config.Name, s.timestamp(t), encodedPath), nil
 	case model.Log:
 		encodedPath := base64.StdEncoding.EncodeToString([]byte(value.Path))
 
-		return fmt.Sprintf("%s:log:%s:%s", s.Config.Name, s.timestamp(), encodedPath), nil
+		return fmt.Sprintf("%s:log:%s:%s", s.Config.Name, s.timestamp(t), encodedPath), nil
 	}
 
 	return "", ErrUnknownModelType
 }
 
-func (s *Storage) timestamp() string {
-	now := time.Now()
+func (s *Storage) timestamp(t *time.Time) string {
 	date := time.Date(
-		now.Year(),
-		now.Month(),
-		now.Day(),
+		t.Year(),
+		t.Month(),
+		t.Day(),
 		0,
 		0,
 		0,
 		0,
-		now.Location(),
+		t.Location(),
 	)
 
 	return strconv.FormatInt(date.Unix(), 10)

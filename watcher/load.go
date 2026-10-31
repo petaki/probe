@@ -4,17 +4,10 @@ import (
 	"log"
 
 	"github.com/petaki/probe/model"
-	"github.com/petaki/probe/storage"
 	"github.com/shirou/gopsutil/v4/load"
 )
 
-// Load watcher.
-type Load struct{}
-
-// Watch function.
-func (Load) Watch(s *storage.Storage, index int, channel chan int) {
-	defer func() { channel <- index }()
-
+func (w *Watcher) load() {
 	stat, err := load.Avg()
 	if err != nil {
 		log.Println(err)
@@ -28,7 +21,7 @@ func (Load) Watch(s *storage.Storage, index int, channel chan int) {
 		Load15: stat.Load15,
 	}
 
-	err = s.Save(loadModel)
+	err = w.storage.Save(loadModel)
 	if err != nil {
 		log.Println(err)
 	}

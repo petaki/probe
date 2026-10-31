@@ -5,26 +5,18 @@ import (
 	"os"
 	"strings"
 
-	"github.com/petaki/probe/config"
 	"github.com/petaki/probe/model"
-	"github.com/petaki/probe/storage"
 )
-
-// Log watcher.
-type Log struct{}
 
 const tailMaxSize = 1024 * 1024
 
-// Watch function.
-func (Log) Watch(s *storage.Storage, index int, channel chan int) {
-	defer func() { channel <- index }()
-
-	if !s.Config.LogTailEnabled {
+func (w *Watcher) log() {
+	if !w.storage.Config.LogTailEnabled {
 		return
 	}
 
-	for _, filePath := range s.Config.LogTailFiles {
-		content, err := tailFile(filePath, s.Config)
+	for _, filePath := range w.storage.Config.LogTailFiles {
+		content, err := w.tailFile(filePath)
 		if err != nil {
 			log.Println(err)
 
@@ -36,14 +28,14 @@ func (Log) Watch(s *storage.Storage, index int, channel chan int) {
 			Content: content,
 		}
 
-		err = s.Save(logModel)
+		err = w.storage.Save(logModel)
 		if err != nil {
 			log.Println(err)
 		}
 	}
 }
 
-func tailFile(path string, c *config.Config) (string, error) {
+func (w *Watcher) tailFile(path string) (string, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return "", err
@@ -68,7 +60,7 @@ func tailFile(path string, c *config.Config) (string, error) {
 
 	newlines := 0
 	cursor := size
-	buf := make([]byte, c.LogTailBufferSize)
+	buf := make([]byte, w.storage.Config.LogTailBufferSize)
 
 	for cursor > limit {
 		chunkSize := min(int64(len(buf)), cursor-limit)
@@ -92,7 +84,7 @@ func tailFile(path string, c *config.Config) (string, error) {
 
 			newlines++
 
-			if newlines >= c.LogTailLines {
+			if newlines >= w.storage.Config.LogTailLines {
 				return readTail(file, position, size)
 			}
 		}

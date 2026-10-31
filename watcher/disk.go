@@ -4,17 +4,10 @@ import (
 	"log"
 
 	"github.com/petaki/probe/model"
-	"github.com/petaki/probe/storage"
 	"github.com/shirou/gopsutil/v4/disk"
 )
 
-// Disk watcher.
-type Disk struct{}
-
-// Watch function.
-func (Disk) Watch(s *storage.Storage, index int, channel chan int) {
-	defer func() { channel <- index }()
-
+func (w *Watcher) disk() {
 	partitions, err := disk.Partitions(false)
 	if err != nil {
 		log.Println(err)
@@ -25,7 +18,7 @@ func (Disk) Watch(s *storage.Storage, index int, channel chan int) {
 	var diskModels []model.Disk
 
 	for _, partition := range partitions {
-		if partition.Mountpoint == "" {
+		if partition.Mountpoint == "" || w.storage.IsPathIgnored(partition.Mountpoint) {
 			continue
 		}
 
@@ -43,7 +36,7 @@ func (Disk) Watch(s *storage.Storage, index int, channel chan int) {
 	}
 
 	for _, diskModel := range diskModels {
-		err := s.Save(diskModel)
+		err := w.storage.Save(diskModel)
 		if err != nil {
 			log.Println(err)
 		}

@@ -49,5 +49,5 @@ func main() {
 	fmt.Println("  🤖 Probe is watching.")
 	fmt.Println()
 
-	watcher.Watch(mainStorage)
+	watcher.New(mainStorage).Watch()
 }
