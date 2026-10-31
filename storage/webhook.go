@@ -1,9 +1,9 @@
 package storage
 
 import (
-	"bytes"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -24,12 +24,12 @@ func (s *Storage) callAlarm(m any) error {
 		name = "CPU"
 		alarm = s.Config.AlarmCPUPercent
 		used = fmt.Sprintf("%.2f", value.Used)
-		link = fmt.Sprintf("/cpu?probe=%s", probe)
+		link = fmt.Sprintf("/cpu?probe=%s", url.QueryEscape(probe))
 	case model.Memory:
 		name = "Memory"
 		alarm = s.Config.AlarmMemoryPercent
 		used = fmt.Sprintf("%.2f", value.Used)
-		link = fmt.Sprintf("/memory?probe=%s", probe)
+		link = fmt.Sprintf("/memory?probe=%s", url.QueryEscape(probe))
 	case []model.ProcessCPU:
 		return nil
 	case []model.ProcessMemory:
@@ -38,12 +38,12 @@ func (s *Storage) callAlarm(m any) error {
 		name = "Load"
 		alarm = s.Config.AlarmLoadValue
 		used = fmt.Sprintf("\"%.2f,%.2f,%.2f\"", value.Load1, value.Load5, value.Load15)
-		link = fmt.Sprintf("/load?probe=%s", probe)
+		link = fmt.Sprintf("/load?probe=%s", url.QueryEscape(probe))
 	case model.Disk:
 		name = fmt.Sprintf("Disk:%s", value.Path)
 		alarm = s.Config.AlarmDiskPercent
 		used = fmt.Sprintf("%.2f", value.Used)
-		link = fmt.Sprintf("/disk?probe=%s&path=%s", probe, value.Path)
+		link = fmt.Sprintf("/disk?probe=%s&path=%s", url.QueryEscape(probe), url.QueryEscape(value.Path))
 	case model.Log:
 		return nil
 	default:
@@ -62,7 +62,7 @@ func (s *Storage) callAlarm(m any) error {
 		"%l", link,
 	).Replace(s.Config.AlarmWebhookBody)
 
-	req, err := http.NewRequest(s.Config.AlarmWebhookMethod, s.Config.AlarmWebhookURL, bytes.NewBuffer([]byte(body)))
+	req, err := http.NewRequest(s.Config.AlarmWebhookMethod, s.Config.AlarmWebhookURL, strings.NewReader(body))
 	if err != nil {
 		return err
 	}

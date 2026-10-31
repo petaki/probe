@@ -1,13 +1,13 @@
 package storage
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/petaki/probe/config"
-	"github.com/petaki/probe/model"
 )
 
 // Storage type.
@@ -43,40 +43,25 @@ func New(config *config.Config) *Storage {
 
 // Save function.
 func (s *Storage) Save(m any) error {
-	var err error
-
-	switch value := m.(type) {
-	case model.Disk:
-		if s.isPathIgnored(value.Path) {
-			return nil
-		}
-	}
+	var errs []error
 
 	if s.Config.DataLogEnabled {
-		err = s.saveDataLog(m)
-		if err != nil {
-			return err
-		}
+		errs = append(errs, s.saveDataLog(m))
 	}
 
 	if s.Config.AlarmEnabled {
-		err = s.saveAlarm(m)
-		if err != nil {
-			return err
-		}
+		errs = append(errs, s.saveAlarm(m))
 	}
 
 	if !s.Config.DataLogEnabled {
-		err = s.printValue(m)
-		if err != nil {
-			return err
-		}
+		errs = append(errs, s.printValue(m))
 	}
 
-	return nil
+	return errors.Join(errs...)
 }
 
-func (s *Storage) isPathIgnored(path string) bool {
+// IsPathIgnored function.
+func (s *Storage) IsPathIgnored(path string) bool {
 	for _, pattern := range s.Config.DiskIgnored {
 		value, hasSuffix := strings.CutSuffix(pattern, "*")
 		value, hasPrefix := strings.CutPrefix(value, "*")
