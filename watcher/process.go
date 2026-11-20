@@ -30,16 +30,7 @@ func (w *Watcher) process() {
 			name = "Unknown"
 		}
 
-		var usedCPU float64
-
-		tracked, seen := w.processes[p.Pid]
-		if seen {
-			usedCPU, err = tracked.Percent(0)
-		} else {
-			tracked = p
-			usedCPU, err = startCPUTracking(p)
-		}
-
+		tracked, usedCPU, err := w.trackCPU(p)
 		if err != nil {
 			usedCPU = 0
 		}
@@ -91,4 +82,22 @@ func (w *Watcher) process() {
 	if err != nil {
 		log.Println(err)
 	}
+}
+
+func (w *Watcher) trackCPU(p *process.Process) (*process.Process, float64, error) {
+	tracked, seen := w.processes[p.Pid]
+	if seen && sameProcess(tracked, p) {
+		used, err := tracked.Percent(0)
+
+		return tracked, used, err
+	}
+
+	_, err := p.Percent(0)
+	if err != nil {
+		return p, 0, err
+	}
+
+	used, err := p.CPUPercent()
+
+	return p, used, err
 }

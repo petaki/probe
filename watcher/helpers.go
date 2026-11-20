@@ -18,11 +18,16 @@ func readTail(file *os.File, start, end int64) (string, error) {
 	return strings.TrimRight(string(content), "\n"), nil
 }
 
-func startCPUTracking(p *process.Process) (float64, error) {
-	_, err := p.Percent(0)
+func sameProcess(a, b *process.Process) bool {
+	aCreated, err := a.CreateTime()
 	if err != nil {
-		return 0, err
+		return false
 	}
 
-	return p.CPUPercent()
+	bCreated, err := b.CreateTime()
+	if err != nil {
+		return false
+	}
+
+	return aCreated == bCreated
 }
