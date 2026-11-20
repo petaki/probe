@@ -3,7 +3,10 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/url"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -33,6 +36,16 @@ const (
 	envLogTailLimit       = "PROBE_LOG_TAIL_LIMIT"
 	envLogTailTimeout     = "PROBE_LOG_TAIL_TIMEOUT"
 )
+
+var webhookMethods = []string{
+	http.MethodGet,
+	http.MethodHead,
+	http.MethodPost,
+	http.MethodPut,
+	http.MethodPatch,
+	http.MethodDelete,
+	http.MethodOptions,
+}
 
 var alwaysRequiredKeys = []string{
 	envName,
@@ -236,8 +249,21 @@ func (c *Config) parse(key string, value string) error {
 
 		c.AlarmLoadValue = alarmLoadValue
 	case envAlarmWebhookMethod:
+		if !slices.Contains(webhookMethods, value) {
+			return fmt.Errorf("%w: %s", ErrInvalidMethod, value)
+		}
+
 		c.AlarmWebhookMethod = value
 	case envAlarmWebhookURL:
+		alarmWebhookURL, err := url.Parse(value)
+		if err != nil {
+			return fmt.Errorf("%w: %s, %w", ErrInvalidURL, value, err)
+		}
+
+		if (alarmWebhookURL.Scheme != "http" && alarmWebhookURL.Scheme != "https") || alarmWebhookURL.Host == "" {
+			return fmt.Errorf("%w: %s", ErrInvalidURL, value)
+		}
+
 		c.AlarmWebhookURL = value
 	case envAlarmWebhookHeader:
 		var alarmWebhookHeader map[string]string

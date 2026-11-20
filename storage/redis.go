@@ -216,13 +216,13 @@ func (s *Storage) saveAlarm(m any) error {
 	}
 
 	if s.Config.AlarmFilterEnabled {
-		return s.filterAlarm(m)
+		return s.filterAlarm(m, time.Now())
 	}
 
 	return s.callAlarm(m)
 }
 
-func (s *Storage) filterAlarm(m any) error {
+func (s *Storage) filterAlarm(m any, now time.Time) error {
 	conn := s.Pool.Get()
 	defer conn.Close()
 
@@ -246,14 +246,7 @@ func (s *Storage) filterAlarm(m any) error {
 	}
 
 	if s.Config.AlarmFilterWait > 1 {
-		now := time.Now()
-
-		key, err := s.key(m, &now)
-		if err != nil {
-			return err
-		}
-
-		var fields []string
+		fieldsByKey := map[string][]string{}
 
 		end := time.Date(
 			now.Year(),
@@ -269,61 +262,68 @@ func (s *Storage) filterAlarm(m any) error {
 		start := end.Add(-time.Duration(s.Config.AlarmFilterWait-2) * time.Minute)
 
 		for current := start; !current.After(end); current = current.Add(time.Minute) {
-			fields = append(fields, s.field(&current))
+			key, err := s.key(m, &current)
+			if err != nil {
+				return err
+			}
+
+			fieldsByKey[key] = append(fieldsByKey[key], s.field(&current))
 		}
 
-		switch m.(type) {
-		case model.CPU, model.Memory, model.Disk:
-			var threshold float64
-
+		for key, fields := range fieldsByKey {
 			switch m.(type) {
-			case model.CPU:
-				threshold = s.Config.AlarmCPUPercent
-			case model.Memory:
-				threshold = s.Config.AlarmMemoryPercent
-			case model.Disk:
-				threshold = s.Config.AlarmDiskPercent
-			}
+			case model.CPU, model.Memory, model.Disk:
+				var threshold float64
 
-			values, err := redis.Float64s(conn.Do("HMGET", redis.Args{}.Add(key).AddFlat(fields)...))
-			if err != nil {
-				return err
-			}
-
-			for _, value := range values {
-				if value < threshold {
-					return nil
-				}
-			}
-		case model.Load:
-			values, err := redis.Strings(conn.Do("HMGET", redis.Args{}.Add(key).AddFlat(fields)...))
-			if err != nil {
-				return err
-			}
-
-			for _, raw := range values {
-				value := true
-				segments := strings.SplitN(raw, ":", 3)
-
-				if len(segments) != 3 {
-					return nil
+				switch m.(type) {
+				case model.CPU:
+					threshold = s.Config.AlarmCPUPercent
+				case model.Memory:
+					threshold = s.Config.AlarmMemoryPercent
+				case model.Disk:
+					threshold = s.Config.AlarmDiskPercent
 				}
 
-				for _, segment := range segments {
-					segmentValue, err := strconv.ParseFloat(segment, 64)
-					if err != nil {
-						return err
+				values, err := redis.Float64s(conn.Do("HMGET", redis.Args{}.Add(key).AddFlat(fields)...))
+				if err != nil {
+					return err
+				}
+
+				for _, value := range values {
+					if value < threshold {
+						return nil
+					}
+				}
+			case model.Load:
+				values, err := redis.Strings(conn.Do("HMGET", redis.Args{}.Add(key).AddFlat(fields)...))
+				if err != nil {
+					return err
+				}
+
+				for _, raw := range values {
+					value := true
+					segments := strings.SplitN(raw, ":", 3)
+
+					if len(segments) != 3 {
+						return nil
 					}
 
-					value = value && segmentValue < s.Config.AlarmLoadValue
-				}
+					for _, segment := range segments {
+						segmentValue, err := strconv.ParseFloat(segment, 64)
+						if err != nil {
+							return err
+						}
 
-				if value {
-					return nil
+						value = value && segmentValue < s.Config.AlarmLoadValue
+					}
+
+					if value {
+						return nil
+					}
 				}
+			default:
+				return ErrUnknownModelType
 			}
-		default:
-			return ErrUnknownModelType
 		}
 	}
 

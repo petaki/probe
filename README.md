@@ -248,11 +248,15 @@ PROBE_ALARM_LOAD_VALUE=1.0
 
 #### Alarm Webhook Method
 
+One of `GET`, `HEAD`, `POST`, `PUT`, `PATCH`, `DELETE` or `OPTIONS`, in uppercase.
+
 ```
 PROBE_ALARM_WEBHOOK_METHOD=POST
 ```
 
 #### Alarm Webhook URL
+
+An absolute `http` or `https` URL.
 
 ```
 PROBE_ALARM_WEBHOOK_URL=http://127.0.0.1:4000/alarm

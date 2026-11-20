@@ -545,3 +545,45 @@ func TestLoadSkipsEmptyLogTailFileEntries(t *testing.T) {
 		}
 	}
 }
+
+func TestLoadValidatesAlarmWebhook(t *testing.T) {
+	cases := []struct {
+		name   string
+		method string
+		url    string
+		want   error
+	}{
+		{"valid", "POST", "https://example.com/alarm", nil},
+		{"lowercase method", "post", "https://example.com/alarm", ErrInvalidMethod},
+		{"unknown method", "SEND", "https://example.com/alarm", ErrInvalidMethod},
+		{"empty method", "", "https://example.com/alarm", ErrInvalidMethod},
+		{"relative url", "POST", "/alarm", ErrInvalidURL},
+		{"missing host", "POST", "http:///alarm", ErrInvalidURL},
+		{"unsupported scheme", "POST", "ftp://example.com/alarm", ErrInvalidURL},
+		{"empty url", "POST", "", ErrInvalidURL},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			resetEnv(t)
+
+			err := godotenv.Load("../.env.example")
+			if err != nil {
+				t.Fatalf("Cannot load the .env.example file.")
+			}
+
+			t.Setenv(envAlarmEnabled, "true")
+			t.Setenv(envAlarmWebhookMethod, tc.method)
+			t.Setenv(envAlarmWebhookURL, tc.url)
+
+			_, err = Load()
+			if tc.want == nil && err != nil {
+				t.Fatalf("Expected Load to succeed, but got: %v", err)
+			}
+
+			if !errors.Is(err, tc.want) {
+				t.Fatalf("Expected Load to fail with %v, but got: %v", tc.want, err)
+			}
+		})
+	}
+}
