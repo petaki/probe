@@ -7,6 +7,16 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v7
 
@@ -17,6 +27,8 @@ jobs:
 
       - name: Test
         run: go test -v -race ./...
+        env:
+          PROBE_TEST_REDIS_URL: redis://127.0.0.1:6379/0
 
       - name: Vet
         run: go vet ./...
@@ -24,7 +36,7 @@ jobs:
       - name: Staticcheck
         run: |
           go install honnef.co/go/tools/cmd/staticcheck@2026.2.2
-          $(go env GOPATH)/bin/staticcheck ./...
+          "$(go env GOPATH)/bin/staticcheck" ./...
 
       - name: Build
         run: make
