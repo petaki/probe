@@ -83,7 +83,7 @@ cp .env.example .env
 
 ## Configuration
 
-Probe reads its configuration from environment variables. On startup, it loads `.env` from the current working directory, not from the directory of the binary. A variable that is already set in the environment overrides the value in `.env`.
+Probe reads its configuration from environment variables. On startup, it loads `.env` from the current working directory, not from the directory of the binary. A variable that is already set in the environment keeps its value.
 
 A ✅ marks where the variable is required.
 
@@ -202,7 +202,7 @@ PROBE_LOG_TAIL_LINES=10
 
 #### Log Tail Buffer Size (in bytes)
 
-The number of bytes that Probe reads per step while it searches backwards for line breaks. The value must be at least `1`.
+How many bytes Probe reads per step while it searches backwards for line breaks. The value must be at least `1`.
 
 ```
 PROBE_LOG_TAIL_BUFFER_SIZE=4096
