@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -109,5 +110,49 @@ func TestCallAlarmInterpolatesProbeName(t *testing.T) {
 
 	if !strings.Contains(receivedBody, `"link":"/cpu?probe=myhost"`) {
 		t.Errorf("Expected body to contain link with probe=myhost, got %v", receivedBody)
+	}
+}
+
+func TestCallAlarmEscapesTextPlaceholders(t *testing.T) {
+	var receivedBody []byte
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		receivedBody, _ = io.ReadAll(r.Body)
+	}))
+	defer server.Close()
+
+	storage := &Storage{
+		Config: &config.Config{
+			Name:               `my "quoted" \ host`,
+			AlarmDiskPercent:   80,
+			AlarmWebhookMethod: http.MethodPost,
+			AlarmWebhookURL:    server.URL,
+			AlarmWebhookBody:   `{"probe":"%p","name":"%n","used":%u}`,
+		},
+		Client: server.Client(),
+	}
+
+	err := storage.callAlarm(model.Disk{Path: `C:\data "<&>"`, Used: 91})
+	if err != nil {
+		t.Fatalf("callAlarm returned error: %v", err)
+	}
+
+	var body struct {
+		Probe string  `json:"probe"`
+		Name  string  `json:"name"`
+		Used  float64 `json:"used"`
+	}
+
+	err = json.Unmarshal(receivedBody, &body)
+	if err != nil {
+		t.Fatalf("Expected a valid JSON body, got %s: %v", receivedBody, err)
+	}
+
+	if body.Probe != storage.Config.Name {
+		t.Errorf("Expected probe %q, got %q", storage.Config.Name, body.Probe)
+	}
+
+	if body.Name != `Disk:C:\data "<&>"` {
+		t.Errorf("Expected name %q, got %q", `Disk:C:\data "<&>"`, body.Name)
 	}
 }

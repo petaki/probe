@@ -8,7 +8,6 @@ import (
 	"os"
 	"slices"
 	"strconv"
-	"strings"
 )
 
 const (
@@ -176,7 +175,7 @@ func (c *Config) parse(key string, value string) error {
 
 		c.Name = value
 	case envDiskIgnored:
-		c.DiskIgnored = strings.Split(value, ",")
+		c.DiskIgnored = splitList(value)
 	case envRedisURL:
 		c.RedisURL = value
 	case envDataLogEnabled:
@@ -317,16 +316,7 @@ func (c *Config) parse(key string, value string) error {
 
 		c.LogTailEnabled = logTailEnabled
 	case envLogTailFiles:
-		var logTailFiles []string
-
-		for file := range strings.SplitSeq(value, ",") {
-			if file == "" {
-				continue
-			}
-
-			logTailFiles = append(logTailFiles, file)
-		}
-
+		logTailFiles := splitList(value)
 		if len(logTailFiles) == 0 {
 			return ErrInvalidValue
 		}

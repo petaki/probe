@@ -53,8 +53,8 @@ func (s *Storage) callAlarm(m any) error {
 	now := time.Now()
 
 	body := strings.NewReplacer(
-		"%p", probe,
-		"%n", name,
+		"%p", jsonEscape(probe),
+		"%n", jsonEscape(name),
 		"%a", fmt.Sprintf("%.2f", alarm),
 		"%u", used,
 		"%t", now.Format(time.RFC3339),

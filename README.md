@@ -117,7 +117,7 @@ PROBE_NAME=probe
 
 #### Disk Ignored
 
-Comma-separated patterns to exclude disk partitions from monitoring:
+Comma-separated patterns to exclude disk partitions from monitoring. Spaces around entries are ignored.
 
 | Pattern | Match Type |
 |---------|------------|
@@ -176,7 +176,7 @@ PROBE_LOG_TAIL_ENABLED=false
 
 #### Log Tail Files (comma-separated)
 
-Empty entries are skipped. At least one path is required.
+Spaces around entries are ignored and empty entries are skipped. At least one path is required.
 
 ```
 PROBE_LOG_TAIL_FILES=/var/log/syslog,/var/log/auth.log
@@ -281,6 +281,8 @@ The body supports the following placeholders:
 | `%t` | Timestamp (`RFC3339`) |
 | `%x` | Timestamp (`Unix`) |
 | `%l` | Satellite link (relative) |
+
+`%p` and `%n` are escaped for use inside a JSON string.
 
 ```
 PROBE_ALARM_WEBHOOK_BODY='{"probe": "%p", "name": "%n", "alarm": %a, "used": %u, "timestamp_rfc3339": "%t", "timestamp_unix": %x, "link": "%l"}'
