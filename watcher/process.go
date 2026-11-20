@@ -25,26 +25,17 @@ func (w *Watcher) process() {
 	current := make(map[int32]*process.Process, len(processes))
 
 	for _, p := range processes {
-		previous, seen := w.processes[p.Pid]
-		if !seen {
-			previous = p
-		}
-
-		current[p.Pid] = previous
-
 		name, err := p.Name()
 		if err != nil {
 			name = "Unknown"
 		}
 
-		usedCPU, err := previous.Percent(0)
-		if !seen {
-			usedCPU, err = p.CPUPercent()
-		}
-
+		tracked, usedCPU, err := w.trackCPU(p)
 		if err != nil {
 			usedCPU = 0
 		}
+
+		current[p.Pid] = tracked
 
 		usedMemory, err := p.MemoryPercent()
 		if err != nil {
@@ -91,4 +82,22 @@ func (w *Watcher) process() {
 	if err != nil {
 		log.Println(err)
 	}
+}
+
+func (w *Watcher) trackCPU(p *process.Process) (*process.Process, float64, error) {
+	tracked, seen := w.processes[p.Pid]
+	if seen && sameProcess(tracked, p) {
+		used, err := tracked.Percent(0)
+
+		return tracked, used, err
+	}
+
+	_, err := p.Percent(0)
+	if err != nil {
+		return p, 0, err
+	}
+
+	used, err := p.CPUPercent()
+
+	return p, used, err
 }

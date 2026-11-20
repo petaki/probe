@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"os"
+	"slices"
 	"testing"
 
 	"github.com/joho/godotenv"
@@ -543,5 +544,99 @@ func TestLoadSkipsEmptyLogTailFileEntries(t *testing.T) {
 		if config.LogTailFiles[i] != value {
 			t.Errorf("Expected %v, but got %v", want, config.LogTailFiles)
 		}
+	}
+}
+
+func TestLoadValidatesAlarmWebhook(t *testing.T) {
+	cases := []struct {
+		name   string
+		method string
+		url    string
+		want   error
+	}{
+		{"valid", "POST", "https://example.com/alarm", nil},
+		{"lowercase method", "post", "https://example.com/alarm", ErrInvalidMethod},
+		{"unknown method", "SEND", "https://example.com/alarm", ErrInvalidMethod},
+		{"empty method", "", "https://example.com/alarm", ErrInvalidMethod},
+		{"relative url", "POST", "/alarm", ErrInvalidURL},
+		{"missing host", "POST", "http:///alarm", ErrInvalidURL},
+		{"unsupported scheme", "POST", "ftp://example.com/alarm", ErrInvalidURL},
+		{"empty url", "POST", "", ErrInvalidURL},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			resetEnv(t)
+
+			err := godotenv.Load("../.env.example")
+			if err != nil {
+				t.Fatalf("Cannot load the .env.example file.")
+			}
+
+			t.Setenv(envAlarmEnabled, "true")
+			t.Setenv(envAlarmWebhookMethod, tc.method)
+			t.Setenv(envAlarmWebhookURL, tc.url)
+
+			_, err = Load()
+			if tc.want == nil && err != nil {
+				t.Fatalf("Expected Load to succeed, but got: %v", err)
+			}
+
+			if !errors.Is(err, tc.want) {
+				t.Fatalf("Expected Load to fail with %v, but got: %v", tc.want, err)
+			}
+		})
+	}
+}
+
+func TestLoadTrimsListEntries(t *testing.T) {
+	resetEnv(t)
+
+	t.Setenv(envName, "probe")
+	t.Setenv(envDiskIgnored, " /dev , /var/lib/docker/* ,, ")
+	t.Setenv(envDataLogEnabled, "false")
+	t.Setenv(envAlarmEnabled, "false")
+	t.Setenv(envAlarmFilterEnabled, "false")
+	t.Setenv(envLogTailEnabled, "true")
+	t.Setenv(envLogTailFiles, " /var/log/syslog , /var/log/auth.log, ")
+	t.Setenv(envLogTailLines, "10")
+	t.Setenv(envLogTailBufferSize, "4096")
+	t.Setenv(envLogTailLimit, "60")
+	t.Setenv(envLogTailTimeout, "172800")
+
+	config, err := Load()
+	if err != nil {
+		t.Fatalf("Expected Load to succeed, but got: %v", err)
+	}
+
+	wantDiskIgnored := []string{"/dev", "/var/lib/docker/*"}
+	if !slices.Equal(config.DiskIgnored, wantDiskIgnored) {
+		t.Errorf("Expected disk ignored %q, but got %q", wantDiskIgnored, config.DiskIgnored)
+	}
+
+	wantLogTailFiles := []string{"/var/log/syslog", "/var/log/auth.log"}
+	if !slices.Equal(config.LogTailFiles, wantLogTailFiles) {
+		t.Errorf("Expected log tail files %q, but got %q", wantLogTailFiles, config.LogTailFiles)
+	}
+}
+
+func TestLoadRejectsBlankLogTailFiles(t *testing.T) {
+	resetEnv(t)
+
+	t.Setenv(envName, "probe")
+	t.Setenv(envDiskIgnored, "/dev")
+	t.Setenv(envDataLogEnabled, "false")
+	t.Setenv(envAlarmEnabled, "false")
+	t.Setenv(envAlarmFilterEnabled, "false")
+	t.Setenv(envLogTailEnabled, "true")
+	t.Setenv(envLogTailFiles, " , ")
+	t.Setenv(envLogTailLines, "10")
+	t.Setenv(envLogTailBufferSize, "4096")
+	t.Setenv(envLogTailLimit, "60")
+	t.Setenv(envLogTailTimeout, "172800")
+
+	_, err := Load()
+	if !errors.Is(err, ErrInvalidValue) {
+		t.Fatalf("Expected Load to fail with ErrInvalidValue, but got: %v", err)
 	}
 }

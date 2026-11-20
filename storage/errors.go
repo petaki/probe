@@ -8,4 +8,7 @@ var (
 
 	// ErrUnknownModelType error.
 	ErrUnknownModelType = errors.New("storage: unknown model type")
+
+	// ErrTransactionFailed error.
+	ErrTransactionFailed = errors.New("storage: transaction failed")
 )

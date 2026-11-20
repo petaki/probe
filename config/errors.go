@@ -17,4 +17,10 @@ var (
 
 	// ErrInvalidValue error.
 	ErrInvalidValue = errors.New("config: invalid value")
+
+	// ErrInvalidMethod error.
+	ErrInvalidMethod = errors.New("config: invalid method")
+
+	// ErrInvalidURL error.
+	ErrInvalidURL = errors.New("config: invalid url")
 )

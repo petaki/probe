@@ -91,11 +91,11 @@ func (s *Storage) saveDataLog(m any) error {
 	switch value := m.(type) {
 	case model.CPU:
 		err = conn.Send(
-			"HSET", key, s.field(&now), value.Used,
+			"HSET", key, field(&now), value.Used,
 		)
 	case model.Memory:
 		err = conn.Send(
-			"HSET", key, s.field(&now), value.Used,
+			"HSET", key, field(&now), value.Used,
 		)
 	case []model.ProcessCPU:
 		var v []string
@@ -105,7 +105,7 @@ func (s *Storage) saveDataLog(m any) error {
 		}
 
 		err = conn.Send(
-			"HSET", key, s.field(&now), strings.Join(v, "|"),
+			"HSET", key, field(&now), strings.Join(v, "|"),
 		)
 	case []model.ProcessMemory:
 		var v []string
@@ -115,19 +115,19 @@ func (s *Storage) saveDataLog(m any) error {
 		}
 
 		err = conn.Send(
-			"HSET", key, s.field(&now), strings.Join(v, "|"),
+			"HSET", key, field(&now), strings.Join(v, "|"),
 		)
 	case model.Load:
 		err = conn.Send(
-			"HSET", key, s.field(&now), fmt.Sprintf("%f:%f:%f", value.Load1, value.Load5, value.Load15),
+			"HSET", key, field(&now), fmt.Sprintf("%f:%f:%f", value.Load1, value.Load5, value.Load15),
 		)
 	case model.Disk:
 		err = conn.Send(
-			"HSET", key, s.field(&now), value.Used,
+			"HSET", key, field(&now), value.Used,
 		)
 	case model.Log:
 		err = conn.Send(
-			"HSET", key, s.field(&now), value.Content,
+			"HSET", key, field(&now), value.Content,
 		)
 	}
 	if err != nil {
@@ -136,7 +136,9 @@ func (s *Storage) saveDataLog(m any) error {
 
 	if !exists {
 		var timeout int
-		if _, ok := m.(model.Log); ok {
+
+		_, ok := m.(model.Log)
+		if ok {
 			timeout = s.Config.LogTailTimeout
 		} else {
 			timeout = s.Config.DataLogTimeout
@@ -148,9 +150,16 @@ func (s *Storage) saveDataLog(m any) error {
 		}
 	}
 
-	_, err = conn.Do("EXEC")
+	replies, err := redis.Values(conn.Do("EXEC"))
 	if err != nil {
 		return err
+	}
+
+	for _, reply := range replies {
+		replyErr, isErr := reply.(redis.Error)
+		if isErr {
+			return fmt.Errorf("%w: %s, %w", ErrTransactionFailed, key, replyErr)
+		}
 	}
 
 	_, ok := m.(model.Log)
@@ -162,15 +171,6 @@ func (s *Storage) saveDataLog(m any) error {
 }
 
 func (s *Storage) trimLogEntries(conn redis.Conn, key string) error {
-	length, err := redis.Int(conn.Do("HLEN", key))
-	if err != nil {
-		return err
-	}
-
-	if length <= s.Config.LogTailLimit {
-		return nil
-	}
-
 	fields, err := redis.Strings(conn.Do("HKEYS", key))
 	if err != nil {
 		return err
@@ -216,13 +216,13 @@ func (s *Storage) saveAlarm(m any) error {
 	}
 
 	if s.Config.AlarmFilterEnabled {
-		return s.filterAlarm(m)
+		return s.filterAlarm(m, time.Now())
 	}
 
 	return s.callAlarm(m)
 }
 
-func (s *Storage) filterAlarm(m any) error {
+func (s *Storage) filterAlarm(m any, now time.Time) error {
 	conn := s.Pool.Get()
 	defer conn.Close()
 
@@ -246,14 +246,7 @@ func (s *Storage) filterAlarm(m any) error {
 	}
 
 	if s.Config.AlarmFilterWait > 1 {
-		now := time.Now()
-
-		key, err := s.key(m, &now)
-		if err != nil {
-			return err
-		}
-
-		var fields []string
+		fieldsByKey := map[string][]string{}
 
 		end := time.Date(
 			now.Year(),
@@ -269,61 +262,37 @@ func (s *Storage) filterAlarm(m any) error {
 		start := end.Add(-time.Duration(s.Config.AlarmFilterWait-2) * time.Minute)
 
 		for current := start; !current.After(end); current = current.Add(time.Minute) {
-			fields = append(fields, s.field(&current))
+			key, err := s.key(m, &current)
+			if err != nil {
+				return err
+			}
+
+			fieldsByKey[key] = append(fieldsByKey[key], field(&current))
 		}
 
-		switch m.(type) {
-		case model.CPU, model.Memory, model.Disk:
-			var threshold float64
+		for key, fields := range fieldsByKey {
+			var dipped bool
 
 			switch m.(type) {
 			case model.CPU:
-				threshold = s.Config.AlarmCPUPercent
+				dipped, err = s.dippedBelow(conn, key, fields, s.Config.AlarmCPUPercent)
 			case model.Memory:
-				threshold = s.Config.AlarmMemoryPercent
+				dipped, err = s.dippedBelow(conn, key, fields, s.Config.AlarmMemoryPercent)
+			case model.Load:
+				dipped, err = s.loadDippedBelow(conn, key, fields)
 			case model.Disk:
-				threshold = s.Config.AlarmDiskPercent
+				dipped, err = s.dippedBelow(conn, key, fields, s.Config.AlarmDiskPercent)
+			default:
+				return ErrUnknownModelType
 			}
 
-			values, err := redis.Float64s(conn.Do("HMGET", redis.Args{}.Add(key).AddFlat(fields)...))
 			if err != nil {
 				return err
 			}
 
-			for _, value := range values {
-				if value < threshold {
-					return nil
-				}
+			if dipped {
+				return nil
 			}
-		case model.Load:
-			values, err := redis.Strings(conn.Do("HMGET", redis.Args{}.Add(key).AddFlat(fields)...))
-			if err != nil {
-				return err
-			}
-
-			for _, raw := range values {
-				value := true
-				segments := strings.SplitN(raw, ":", 3)
-
-				if len(segments) != 3 {
-					return nil
-				}
-
-				for _, segment := range segments {
-					segmentValue, err := strconv.ParseFloat(segment, 64)
-					if err != nil {
-						return err
-					}
-
-					value = value && segmentValue < s.Config.AlarmLoadValue
-				}
-
-				if value {
-					return nil
-				}
-			}
-		default:
-			return ErrUnknownModelType
 		}
 	}
 
@@ -341,59 +310,75 @@ func (s *Storage) filterAlarm(m any) error {
 	return err
 }
 
+func (s *Storage) dippedBelow(conn redis.Conn, key string, fields []string, threshold float64) (bool, error) {
+	values, err := redis.Float64s(conn.Do("HMGET", redis.Args{}.Add(key).AddFlat(fields)...))
+	if err != nil {
+		return false, err
+	}
+
+	for _, value := range values {
+		if value < threshold {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func (s *Storage) loadDippedBelow(conn redis.Conn, key string, fields []string) (bool, error) {
+	values, err := redis.Strings(conn.Do("HMGET", redis.Args{}.Add(key).AddFlat(fields)...))
+	if err != nil {
+		return false, err
+	}
+
+	for _, raw := range values {
+		segments := strings.SplitN(raw, ":", 3)
+		if len(segments) != 3 {
+			return true, nil
+		}
+
+		allBelow := true
+
+		for _, segment := range segments {
+			segmentValue, err := strconv.ParseFloat(segment, 64)
+			if err != nil {
+				return false, err
+			}
+
+			allBelow = allBelow && segmentValue < s.Config.AlarmLoadValue
+		}
+
+		if allBelow {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 func (s *Storage) key(m any, t *time.Time) (string, error) {
 	switch value := m.(type) {
 	case model.CPU:
-		return fmt.Sprintf("%s:cpu:%s", s.Config.Name, s.timestamp(t)), nil
+		return fmt.Sprintf("%s:cpu:%s", s.Config.Name, timestamp(t)), nil
 	case model.Memory:
-		return fmt.Sprintf("%s:memory:%s", s.Config.Name, s.timestamp(t)), nil
+		return fmt.Sprintf("%s:memory:%s", s.Config.Name, timestamp(t)), nil
 	case []model.ProcessCPU:
-		return fmt.Sprintf("%s:process:cpu:%s", s.Config.Name, s.timestamp(t)), nil
+		return fmt.Sprintf("%s:process:cpu:%s", s.Config.Name, timestamp(t)), nil
 	case []model.ProcessMemory:
-		return fmt.Sprintf("%s:process:memory:%s", s.Config.Name, s.timestamp(t)), nil
+		return fmt.Sprintf("%s:process:memory:%s", s.Config.Name, timestamp(t)), nil
 	case model.Load:
-		return fmt.Sprintf("%s:load:%s", s.Config.Name, s.timestamp(t)), nil
+		return fmt.Sprintf("%s:load:%s", s.Config.Name, timestamp(t)), nil
 	case model.Disk:
 		encodedPath := base64.StdEncoding.EncodeToString([]byte(value.Path))
 
-		return fmt.Sprintf("%s:disk:%s:%s", s.Config.Name, s.timestamp(t), encodedPath), nil
+		return fmt.Sprintf("%s:disk:%s:%s", s.Config.Name, timestamp(t), encodedPath), nil
 	case model.Log:
 		encodedPath := base64.StdEncoding.EncodeToString([]byte(value.Path))
 
-		return fmt.Sprintf("%s:log:%s:%s", s.Config.Name, s.timestamp(t), encodedPath), nil
+		return fmt.Sprintf("%s:log:%s:%s", s.Config.Name, timestamp(t), encodedPath), nil
 	}
 
 	return "", ErrUnknownModelType
-}
-
-func (s *Storage) timestamp(t *time.Time) string {
-	date := time.Date(
-		t.Year(),
-		t.Month(),
-		t.Day(),
-		0,
-		0,
-		0,
-		0,
-		t.Location(),
-	)
-
-	return strconv.FormatInt(date.Unix(), 10)
-}
-
-func (s *Storage) field(t *time.Time) string {
-	date := time.Date(
-		t.Year(),
-		t.Month(),
-		t.Day(),
-		t.Hour(),
-		t.Minute(),
-		0,
-		0,
-		t.Location(),
-	)
-
-	return strconv.FormatInt(date.Unix(), 10)
 }
 
 func (s *Storage) alarmKey(m any) (string, error) {

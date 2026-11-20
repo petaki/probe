@@ -10,9 +10,7 @@ import (
 	"github.com/petaki/probe/watcher"
 )
 
-var mainStorage *storage.Storage
-
-func init() {
+func main() {
 	fmt.Println()
 	fmt.Println("  🔍 Starting Probe...")
 	fmt.Println()
@@ -22,7 +20,7 @@ func init() {
 		log.Fatal(err)
 	}
 
-	mainStorage = storage.New(mainConfig)
+	mainStorage := storage.New(mainConfig)
 
 	if mainConfig.DataLogEnabled {
 		fmt.Println("  📡 Data logging is enabled.")
@@ -43,9 +41,7 @@ func init() {
 			log.Fatal(err)
 		}
 	}
-}
 
-func main() {
 	fmt.Println("  🤖 Probe is watching.")
 	fmt.Println()
 

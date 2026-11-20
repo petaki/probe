@@ -3,7 +3,6 @@ package watcher
 import (
 	"log"
 	"os"
-	"strings"
 
 	"github.com/petaki/probe/model"
 )
@@ -91,15 +90,4 @@ func (w *Watcher) tailFile(path string) (string, error) {
 	}
 
 	return readTail(file, limit, size)
-}
-
-func readTail(file *os.File, start, end int64) (string, error) {
-	content := make([]byte, end-start)
-
-	_, err := file.ReadAt(content, start)
-	if err != nil {
-		return "", err
-	}
-
-	return strings.TrimRight(string(content), "\n"), nil
 }
