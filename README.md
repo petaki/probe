@@ -25,7 +25,7 @@ Probe collects every metric once a minute, on the minute.
 
 - **CPU** - overall CPU usage percentage
 - **Memory** - overall memory usage percentage
-- **Process** - the top 3 processes by CPU and the top 3 by memory. Process CPU is measured per core, so a busy process can exceed 100%.
+- **Process** - the top 3 processes by CPU and by memory, with CPU measured per core
 - **Load** - system load averages (1, 5, 15 min)
 - **Disk** - per-partition disk usage percentage (with ignore patterns)
 - **Log Tail** - tail the last N lines of specified log files
@@ -40,7 +40,7 @@ Follow the steps below to install and configure Probe.
 
 ### Prerequisites
 
-- Redis: `Version >= 5.0` (optional, required for data logging and alarm filtering)
+- Redis: `Version >= 5.0`, required only for data logging and alarm filtering
 
 ### Install from Binary
 
@@ -117,7 +117,7 @@ A ✅ marks where the variable is required.
 
 #### Probe Name
 
-Identifier of this probe instance. Used as the `%p` webhook placeholder and the Redis key prefix.
+The name of this probe instance. Probe uses it as the `%p` webhook placeholder and the Redis key prefix.
 
 ```
 PROBE_NAME=probe
@@ -125,7 +125,7 @@ PROBE_NAME=probe
 
 #### Disk Ignored
 
-Comma-separated patterns to exclude disk partitions from monitoring. Spaces around entries are ignored.
+Comma-separated patterns of disk partitions to skip. Probe ignores spaces around entries.
 
 | Pattern | Match Type |
 |---------|------------|
@@ -186,7 +186,7 @@ PROBE_LOG_TAIL_ENABLED=false
 
 #### Log Tail Files (comma-separated)
 
-Spaces around entries are ignored and empty entries are skipped. At least one path is required.
+Empty entries and spaces around entries are ignored. At least one path is required.
 
 ```
 PROBE_LOG_TAIL_FILES=/var/log/syslog,/var/log/auth.log
@@ -228,7 +228,9 @@ PROBE_LOG_TAIL_TIMEOUT=172800
 
 ### Alarm
 
-Sends a webhook notification when a metric reaches its threshold. Probe checks every minute, so it sends a notification every minute while the metric stays at or above the threshold. Use the [alarm filter](#alarm-filter) to reduce repeats.
+Sends a webhook notification when a metric reaches its threshold.
+
+Probe checks every minute. While a metric stays at or above its threshold, Probe sends a notification every minute. The [alarm filter](#alarm-filter) reduces these repeats.
 
 Set a threshold to `0` to disable it. The percent thresholds must be between `0` and `100`.
 
@@ -286,7 +288,7 @@ PROBE_ALARM_WEBHOOK_URL=http://127.0.0.1:4000/alarm
 
 #### Alarm Webhook Header
 
-A JSON object with string values. Probe does not set `Content-Type`, so set it here if your receiver needs it.
+A JSON object with string values. Probe does not set `Content-Type`, so add it here if your receiver needs it.
 
 ```
 PROBE_ALARM_WEBHOOK_HEADER='{"Authorization": "Bearer TOKEN", "Accept": "application/json", "Content-Type": "application/json"}'
@@ -301,14 +303,16 @@ The body supports the following placeholders:
 | `%p` | Probe name |
 | `%n` | Watcher name: `CPU`, `Memory`, `Load`, or `Disk:<path>` |
 | `%a` | Alarm threshold |
-| `%u` | Current value as a number. For `Load`, a quoted string of the 1, 5, and 15 minute averages, such as `"1.50,0.80,0.40"` |
+| `%u` | Current value |
 | `%t` | Timestamp (`RFC3339`) |
 | `%x` | Timestamp (`Unix`) |
 | `%l` | Satellite link (relative) |
 
-`%p` and `%n` are escaped for use inside a JSON string. Put `%u` in the body without quotes, because the `Load` value already has them.
+`%p` and `%n` are escaped for use inside a JSON string.
 
-Probe waits up to 10 seconds for a response. A status code of `400` or higher counts as a failure.
+`%u` is a number. For `Load`, it is a quoted string of the 1, 5, and 15 minute averages, such as `"1.50,0.80,0.40"`. Put `%u` in the body without quotes.
+
+Probe waits up to 10 seconds for a response. A status code of `400` or higher is a failure.
 
 ```
 PROBE_ALARM_WEBHOOK_BODY='{"probe": "%p", "name": "%n", "alarm": %a, "used": %u, "timestamp_rfc3339": "%t", "timestamp_unix": %x, "link": "%l"}'
