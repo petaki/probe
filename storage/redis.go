@@ -171,15 +171,6 @@ func (s *Storage) saveDataLog(m any) error {
 }
 
 func (s *Storage) trimLogEntries(conn redis.Conn, key string) error {
-	length, err := redis.Int(conn.Do("HLEN", key))
-	if err != nil {
-		return err
-	}
-
-	if length <= s.Config.LogTailLimit {
-		return nil
-	}
-
 	fields, err := redis.Strings(conn.Do("HKEYS", key))
 	if err != nil {
 		return err

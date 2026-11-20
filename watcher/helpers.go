@@ -3,6 +3,8 @@ package watcher
 import (
 	"os"
 	"strings"
+
+	"github.com/shirou/gopsutil/v4/process"
 )
 
 func readTail(file *os.File, start, end int64) (string, error) {
@@ -14,4 +16,13 @@ func readTail(file *os.File, start, end int64) (string, error) {
 	}
 
 	return strings.TrimRight(string(content), "\n"), nil
+}
+
+func startCPUTracking(p *process.Process) (float64, error) {
+	_, err := p.Percent(0)
+	if err != nil {
+		return 0, err
+	}
+
+	return p.CPUPercent()
 }
