@@ -2,6 +2,7 @@ package storage
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -154,5 +155,31 @@ func TestCallAlarmEscapesTextPlaceholders(t *testing.T) {
 
 	if body.Name != `Disk:C:\data "<&>"` {
 		t.Errorf("Expected name %q, got %q", `Disk:C:\data "<&>"`, body.Name)
+	}
+}
+
+func TestCallAlarmReportsBadStatusCode(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}))
+	defer server.Close()
+
+	storage := &Storage{
+		Config: &config.Config{
+			Name:               "myhost",
+			AlarmCPUPercent:    30,
+			AlarmWebhookMethod: http.MethodPost,
+			AlarmWebhookURL:    server.URL,
+		},
+		Client: server.Client(),
+	}
+
+	err := storage.callAlarm(model.CPU{Used: 90})
+	if !errors.Is(err, ErrBadStatusCode) {
+		t.Fatalf("Expected ErrBadStatusCode, got %v", err)
+	}
+
+	if !strings.Contains(err.Error(), "503") {
+		t.Errorf("Expected the error to name status code 503, got %v", err)
 	}
 }

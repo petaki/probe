@@ -79,7 +79,7 @@ func (s *Storage) callAlarm(m any) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		return ErrBadStatusCode
+		return fmt.Errorf("%w: %d", ErrBadStatusCode, resp.StatusCode)
 	}
 
 	return nil
