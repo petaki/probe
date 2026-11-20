@@ -18,7 +18,7 @@ func readTail(file *os.File, start, end int64) (string, error) {
 	return strings.TrimRight(string(content), "\n"), nil
 }
 
-func sameProcess(a, b *process.Process) bool {
+func sameStartTime(a, b *process.Process) bool {
 	aCreated, err := a.CreateTime()
 	if err != nil {
 		return false

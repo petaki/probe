@@ -86,7 +86,7 @@ func (w *Watcher) process() {
 
 func (w *Watcher) trackCPU(p *process.Process) (*process.Process, float64, error) {
 	tracked, seen := w.processes[p.Pid]
-	if seen && sameProcess(tracked, p) {
+	if seen && sameStartTime(tracked, p) {
 		used, err := tracked.Percent(0)
 
 		return tracked, used, err
