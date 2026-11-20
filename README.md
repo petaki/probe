@@ -2,6 +2,8 @@
 
 A lightweight Go agent for monitoring system resources and log files.
 
+Probe collects every metric once a minute, on the minute.
+
 ```
 
   🔍 Starting Probe...
@@ -23,7 +25,7 @@ A lightweight Go agent for monitoring system resources and log files.
 
 - **CPU** - overall CPU usage percentage
 - **Memory** - overall memory usage percentage
-- **Process** - per-process CPU and memory usage
+- **Process** - the top 3 processes by CPU and by memory, with CPU measured per core
 - **Load** - system load averages (1, 5, 15 min)
 - **Disk** - per-partition disk usage percentage (with ignore patterns)
 - **Log Tail** - tail the last N lines of specified log files
@@ -38,7 +40,7 @@ Follow the steps below to install and configure Probe.
 
 ### Prerequisites
 
-- Redis: `Version >= 5.0` (optional, required for data logging and alarm filtering)
+- Redis: `Version >= 5.0`, required only for data logging and alarm filtering
 
 ### Install from Binary
 
@@ -57,7 +59,7 @@ Download the latest release for your platform from the [GitHub Releases](https:/
 1. Clone the repository:
 
 ```bash
-git clone git@github.com:petaki/probe.git
+git clone https://github.com/petaki/probe.git
 ```
 
 2. Build the binary:
@@ -73,9 +75,15 @@ go build
 cp .env.example .env
 ```
 
+4. Run Probe from the directory that holds `.env`:
+
+```bash
+./probe
+```
+
 ## Configuration
 
-All configuration is done through environment variables in the `.env` file.
+Probe reads its configuration from environment variables. On startup, it loads `.env` from the current working directory, not from the directory of the binary. A variable that is already set in the environment keeps its value.
 
 A ✅ marks where the variable is required.
 
@@ -109,7 +117,7 @@ A ✅ marks where the variable is required.
 
 #### Probe Name
 
-Identifier of this probe instance. Used as the `%p` webhook placeholder and the Redis key prefix.
+The name of this probe instance. Probe uses it as the `%p` webhook placeholder and the Redis key prefix.
 
 ```
 PROBE_NAME=probe
@@ -117,7 +125,7 @@ PROBE_NAME=probe
 
 #### Disk Ignored
 
-Comma-separated patterns to exclude disk partitions from monitoring. Spaces around entries are ignored.
+Comma-separated patterns of disk partitions to skip. Probe ignores spaces around entries.
 
 | Pattern | Match Type |
 |---------|------------|
@@ -156,6 +164,8 @@ PROBE_DATA_LOG_ENABLED=true
 
 #### Data Log Timeout (in seconds)
 
+Probe stores each day's data under its own keys. The keys expire this many seconds after the first sample of the day. The value must be at least `1`.
+
 ```
 PROBE_DATA_LOG_TIMEOUT=2592000
 ```
@@ -164,7 +174,7 @@ PROBE_DATA_LOG_TIMEOUT=2592000
 
 ### Log Tail
 
-Tails the last N lines of specified log files on each monitoring cycle.
+Tails the last N lines of the specified log files every minute.
 
 At most 1 MiB is read from the end of each file.
 
@@ -176,7 +186,7 @@ PROBE_LOG_TAIL_ENABLED=false
 
 #### Log Tail Files (comma-separated)
 
-Spaces around entries are ignored and empty entries are skipped. At least one path is required.
+Empty entries and spaces around entries are ignored. At least one path is required.
 
 ```
 PROBE_LOG_TAIL_FILES=/var/log/syslog,/var/log/auth.log
@@ -184,23 +194,31 @@ PROBE_LOG_TAIL_FILES=/var/log/syslog,/var/log/auth.log
 
 #### Log Tail Lines
 
+The value must be at least `1`.
+
 ```
 PROBE_LOG_TAIL_LINES=10
 ```
 
 #### Log Tail Buffer Size (in bytes)
 
+How many bytes Probe reads per step while it searches backwards for line breaks. The value must be at least `1`.
+
 ```
 PROBE_LOG_TAIL_BUFFER_SIZE=4096
 ```
 
-#### Log Tail Limit (max entries per log file in Redis)
+#### Log Tail Limit (max entries per log file per day in Redis)
+
+Probe stores each day's tails under their own keys, so the limit applies to each log file for each day. The value must be at least `1`.
 
 ```
 PROBE_LOG_TAIL_LIMIT=60
 ```
 
 #### Log Tail Timeout (in seconds)
+
+The keys for each day's tails expire this many seconds after the first tail of the day. The value must be at least `1`.
 
 ```
 PROBE_LOG_TAIL_TIMEOUT=172800
@@ -210,7 +228,11 @@ PROBE_LOG_TAIL_TIMEOUT=172800
 
 ### Alarm
 
-Sends webhook notifications when a metric exceeds its threshold. Set a threshold to `0` to disable it.
+Sends a webhook notification when a metric reaches its threshold.
+
+Probe checks every minute. While a metric stays at or above its threshold, Probe sends a notification every minute. The [alarm filter](#alarm-filter) reduces these repeats.
+
+Set a threshold to `0` to disable it. The percent thresholds must be between `0` and `100`.
 
 #### Alarm Enabled
 
@@ -238,6 +260,8 @@ PROBE_ALARM_DISK_PERCENT=80
 
 #### Alarm Load Value
 
+A load alarm fires when any of the 1, 5, or 15 minute load averages reaches the value. The value must be at least `0`.
+
 ```
 PROBE_ALARM_LOAD_VALUE=1.0
 ```
@@ -264,8 +288,10 @@ PROBE_ALARM_WEBHOOK_URL=http://127.0.0.1:4000/alarm
 
 #### Alarm Webhook Header
 
+A JSON object with string values. Probe does not set `Content-Type`, so add it here if your receiver needs it.
+
 ```
-PROBE_ALARM_WEBHOOK_HEADER='{"Authorization": "Bearer TOKEN", "Accept": "application/json"}'
+PROBE_ALARM_WEBHOOK_HEADER='{"Authorization": "Bearer TOKEN", "Accept": "application/json", "Content-Type": "application/json"}'
 ```
 
 #### Alarm Webhook Body
@@ -275,7 +301,7 @@ The body supports the following placeholders:
 | Placeholder | Description |
 |-------------|-------------|
 | `%p` | Probe name |
-| `%n` | Watcher name |
+| `%n` | Watcher name: `CPU`, `Memory`, `Load`, or `Disk:<path>` |
 | `%a` | Alarm threshold |
 | `%u` | Current value |
 | `%t` | Timestamp (`RFC3339`) |
@@ -283,6 +309,10 @@ The body supports the following placeholders:
 | `%l` | Satellite link (relative) |
 
 `%p` and `%n` are escaped for use inside a JSON string.
+
+`%u` is a number. For `Load`, it is a quoted string of the 1, 5, and 15 minute averages, such as `"1.50,0.80,0.40"`. Put `%u` in the body without quotes.
+
+Probe waits up to 10 seconds for a response. A status code of `400` or higher is a failure.
 
 ```
 PROBE_ALARM_WEBHOOK_BODY='{"probe": "%p", "name": "%n", "alarm": %a, "used": %u, "timestamp_rfc3339": "%t", "timestamp_unix": %x, "link": "%l"}'
@@ -302,7 +332,7 @@ PROBE_ALARM_FILTER_ENABLED=false
 
 #### Alarm Filter Wait (in minutes before first alarm)
 
-Set to `0` to disable.
+Set to `0` or `1` to disable. With a value of N, an alarm fires on the Nth consecutive minute at or above the threshold. A minute without data, such as a minute after a restart, starts the count again.
 
 Values above `1` require `PROBE_DATA_LOG_ENABLED=true`.
 
@@ -312,7 +342,7 @@ PROBE_ALARM_FILTER_WAIT=5
 
 #### Alarm Filter Sleep (in seconds between alarms)
 
-Set to `0` to disable.
+Set to `0` to disable. The cooldown applies to each metric separately, and to each disk path. It starts after a webhook succeeds. Probe retries a failed webhook the next minute.
 
 ```
 PROBE_ALARM_FILTER_SLEEP=300
@@ -321,7 +351,13 @@ PROBE_ALARM_FILTER_SLEEP=300
 ## Testing
 
 ```bash
-go test -v ./...
+go test ./...
+```
+
+Tests that need Redis are skipped unless `PROBE_TEST_REDIS_URL` is set. These tests write short-lived `probe-test-*` keys, so point the variable at a database that you can spare:
+
+```bash
+PROBE_TEST_REDIS_URL=redis://127.0.0.1:6379/15 go test ./...
 ```
 
 ## Data Visualization

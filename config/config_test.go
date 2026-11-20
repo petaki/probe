@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"maps"
 	"os"
 	"slices"
 	"testing"
@@ -164,16 +165,14 @@ func TestLoadAndParseWithAllFeaturesEnabled(t *testing.T) {
 		t.Errorf("Expected alarm webhook URL http://127.0.0.1:4000/alarm, but got %v", config.AlarmWebhookURL)
 	}
 
-	for name, value := range config.AlarmWebhookHeader {
-		if name == "Accept" && value == "application/json" {
-			continue
-		}
+	wantHeader := map[string]string{
+		"Accept":        "application/json",
+		"Authorization": "Bearer TOKEN",
+		"Content-Type":  "application/json",
+	}
 
-		if name == "Authorization" && value == "Bearer TOKEN" {
-			continue
-		}
-
-		t.Errorf("Expected alarm webhook header map[Accept:application/json Authorization:Bearer TOKEN], but got %v", config.AlarmWebhookHeader)
+	if !maps.Equal(config.AlarmWebhookHeader, wantHeader) {
+		t.Errorf("Expected alarm webhook header %v, but got %v", wantHeader, config.AlarmWebhookHeader)
 	}
 
 	if config.AlarmWebhookBody != "{\"probe\": \"%p\", \"name\": \"%n\", \"alarm\": %a, \"used\": %u, \"timestamp_rfc3339\": \"%t\", \"timestamp_unix\": %x, \"link\": \"%l\"}" {
