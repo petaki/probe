@@ -148,9 +148,16 @@ func (s *Storage) saveDataLog(m any) error {
 		}
 	}
 
-	_, err = conn.Do("EXEC")
+	replies, err := redis.Values(conn.Do("EXEC"))
 	if err != nil {
 		return err
+	}
+
+	for _, reply := range replies {
+		replyErr, isErr := reply.(redis.Error)
+		if isErr {
+			return fmt.Errorf("%w: %s, %w", ErrTransactionFailed, key, replyErr)
+		}
 	}
 
 	_, ok := m.(model.Log)
